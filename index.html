@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>10x Record Breaker - 終極完美版</title>
+  <title>10x Record Breaker</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -57,6 +57,18 @@
       color: #000;
       font-weight: bold;
     }
+    .lang-btn {
+      background: #1e293b;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: bold;
+    }
+    .lang-btn:active { background: #334155; }
     .offline-alert {
       display: none;
       background: rgba(16, 185, 129, 0.15);
@@ -143,7 +155,7 @@
         <div class="title" id="txtTitle">⚡ 10的倍數：持久化離線計算</div>
         <div class="status-badge" id="badge">準備就緒</div>
       </div>
-      <button onclick="toggleLanguage()" id="langSwitch" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:12px;">EN / 中文</button>
+      <button class="lang-btn" onclick="toggleLanguage()" id="langSwitch">English</button>
     </div>
 
     <div class="offline-alert" id="offlineAlert"></div>
@@ -151,14 +163,14 @@
     <div class="log-window" id="logWindow">
       <div id="archiveArea"></div>
       <div id="liveArea">
-        <div style="color: #64748b;" id="txtPlaceholder">// 點擊下方按鈕開始計算（支援關閉背景續算）...</div>
+        <div style="color: #64748b;" id="txtPlaceholder">// 點擊下方按鈕開始計算...</div>
       </div>
     </div>
 
     <div class="controls">
       <button class="ctrl-btn btn-step" onclick="postAction('step', 1)" id="btnStep">單步 +10</button>
-      <button class="ctrl-btn btn-run" onclick="postAction('start', { speed: 50, batch: 5 })" id="btnRun">連續輸出</button>
-      <button class="ctrl-btn btn-warp" onclick="postAction('start', { speed: 50, batch: 500 })" id="btnWarp">極速批次</button>
+      <button class="ctrl-btn btn-run" onclick="postAction('start', { speed: 60, batch: 5 })" id="btnRun">連續輸出</button>
+      <button class="ctrl-btn btn-warp" onclick="postAction('start', { speed: 60, batch: 200 })" id="btnWarp">極速批次</button>
       <button class="ctrl-btn btn-stop" onclick="postAction('stop')" id="btnStop">暫停</button>
       <button class="ctrl-btn btn-clear" onclick="clearAllData()" id="btnClear">清空所有紀錄與存檔</button>
     </div>
@@ -169,26 +181,32 @@
       'zh-TW': {
         title: '⚡ 10的倍數：持久化離線計算',
         ready: '準備就緒',
-        placeholder: '// 點擊下方按鈕開始計算（支援關閉背景續算）...',
+        running: '正在計算中...',
+        paused: '已暫停',
+        placeholder: '// 點擊下方按鈕開始計算...',
         stepBtn: '單步 +10',
         runBtn: '連續輸出',
         warpBtn: '極速批次',
         stopBtn: '暫停',
         clearBtn: '清空所有紀錄與存檔',
         recordAchieved: '🎉 達成 1,000,000 世界紀錄！',
+        langBtnText: 'English',
         stepPrefix: '第',
         stepSuffix: '步'
       },
       'en': {
         title: '⚡ 10x Multiples: Offline Engine',
         ready: 'Ready',
-        placeholder: '// Click buttons below to start (Supports offline progress)...',
+        running: 'Computing...',
+        paused: 'Paused',
+        placeholder: '// Click buttons below to start...',
         stepBtn: 'Step +10',
         runBtn: 'Auto Stream',
         warpBtn: 'Hyper Batch',
         stopBtn: 'Pause',
         clearBtn: 'Clear All Data',
         recordAchieved: '🎉 1,000,000 Record Broken!',
+        langBtnText: '繁體中文',
         stepPrefix: 'Step',
         stepSuffix: ''
       }
@@ -196,8 +214,8 @@
 
     let currentLang = 'zh-TW';
     let step = 0;
-    let isRunning = false; // 關鍵：運行狀態鎖
-    let currentConfig = { speed: 50, batch: 5 };
+    let isRunning = false;
+    let currentConfig = { speed: 60, batch: 5 };
     let hasPlayedAudio = false;
 
     const MAX_LIVE_ROWS = 30;
@@ -210,8 +228,8 @@
     const offlineAlert = document.getElementById('offlineAlert');
 
     let pendingArchive = [];
+    let worker = null;
 
-    // --- Web Worker 背景引擎 ---
     const workerScript = `
       let timer = null;
       self.onmessage = function(e) {
@@ -228,35 +246,56 @@
         }
       };
     `;
-    const blob = new Blob([workerScript], { type: 'application/javascript' });
-    const worker = new Worker(URL.createObjectURL(blob));
+    const workerBlobUrl = URL.createObjectURL(new Blob([workerScript], { type: 'application/javascript' }));
 
-    // 接收 Worker 數據
-    worker.onmessage = function(e) {
-      if (!isRunning) return; // 【關鍵修復】：如果已經按了暫停，瞬間丟棄排隊中的多餘數字！
-      if (e.data.type === 'batch') {
-        generateBatch(e.data.count);
-        saveState();
+    function getOrCreateWorker() {
+      if (!worker) {
+        worker = new Worker(workerBlobUrl);
+        worker.onmessage = function(e) {
+          if (!isRunning) return;
+          if (e.data.type === 'batch') {
+            generateBatch(e.data.count);
+            saveState();
+          }
+        };
       }
-    };
+      return worker;
+    }
+
+    function killWorker() {
+      if (worker) {
+        worker.terminate();
+        worker = null;
+      }
+    }
 
     function postAction(action, data) {
+      const t = i18n[currentLang];
       if (action === 'start') {
         isRunning = true;
         currentConfig = data;
+        if (step * 10 < 1000000) badge.textContent = t.running;
+        const w = getOrCreateWorker();
+        w.postMessage({ action, data });
       } else if (action === 'stop') {
-        isRunning = false; // 瞬間阻斷渲染閘門
+        isRunning = false;
+        killWorker(); // 核心修復：物理終止 Worker 線程，保證瞬間剎車
+        if (step * 10 < 1000000) badge.textContent = t.paused;
+      } else if (action === 'step') {
+        isRunning = true;
+        const w = getOrCreateWorker();
+        w.postMessage({ action, data });
+        setTimeout(() => { isRunning = false; }, 0);
       }
       saveState();
-      worker.postMessage({ action, data });
     }
 
-    // --- 離線狀態保存與時間追趕 ---
     function saveState() {
       const state = {
         step: step,
         isRunning: isRunning,
         currentConfig: currentConfig,
+        currentLang: currentLang,
         timestamp: Date.now()
       };
       localStorage.setItem('counter_10x_state', JSON.stringify(state));
@@ -270,7 +309,10 @@
         const state = JSON.parse(saved);
         step = state.step || 0;
         isRunning = state.isRunning || false;
-        currentConfig = state.currentConfig || { speed: 50, batch: 5 };
+        currentConfig = state.currentConfig || { speed: 60, batch: 5 };
+        if (state.currentLang && state.currentLang !== currentLang) {
+          toggleLanguage(state.currentLang);
+        }
 
         if (step > 0) {
           liveArea.innerHTML = '';
@@ -297,7 +339,7 @@
             createBulkArchiveBlock(previousStep + 1, step);
             generateBatch(1);
           }
-          worker.postMessage({ action: 'start', data: currentConfig });
+          postAction('start', currentConfig);
         }
       } catch (e) {
         console.error('State load error', e);
@@ -391,29 +433,43 @@
       postAction('stop');
       localStorage.removeItem('counter_10x_state');
       step = 0;
+      isRunning = false;
       hasPlayedAudio = false;
       pendingArchive = [];
       archiveArea.innerHTML = '';
       offlineAlert.style.display = 'none';
       const t = i18n[currentLang];
-      liveArea.innerHTML = `<div style="color: #64748b;">${t.placeholder}</div>`;
+      liveArea.innerHTML = `<div style="color: #64748b;" id="txtPlaceholder">${t.placeholder}</div>`;
       badge.className = 'status-badge';
       badge.textContent = t.ready;
     }
 
-    function toggleLanguage() {
-      currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
+    function toggleLanguage(forceLang) {
+      currentLang = forceLang || (currentLang === 'zh-TW' ? 'en' : 'zh-TW');
       const t = i18n[currentLang];
+      
       document.getElementById('txtTitle').textContent = t.title;
+      document.getElementById('langSwitch').textContent = t.langBtnText;
       document.getElementById('btnStep').textContent = t.stepBtn;
       document.getElementById('btnRun').textContent = t.runBtn;
       document.getElementById('btnWarp').textContent = t.warpBtn;
       document.getElementById('btnStop').textContent = t.stopBtn;
       document.getElementById('btnClear').textContent = t.clearBtn;
-      if (step === 0) {
+      
+      if (step * 10 >= 1000000) {
+        badge.textContent = t.recordAchieved;
+      } else if (isRunning) {
+        badge.textContent = t.running;
+      } else if (step > 0) {
+        badge.textContent = t.paused;
+      } else {
         badge.textContent = t.ready;
-        document.getElementById('txtPlaceholder').textContent = t.placeholder;
       }
+
+      const ph = document.getElementById('txtPlaceholder');
+      if (ph) ph.textContent = t.placeholder;
+
+      saveState();
     }
 
     window.addEventListener('beforeunload', saveState);
@@ -427,3 +483,4 @@
 
 </body>
 </html>
+

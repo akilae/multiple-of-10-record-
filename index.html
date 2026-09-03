@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>10的倍數 - 極速破紀錄與記憶體壓縮引擎</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "SF Mono", Monaco, "Cascadia Code", "Courier New", monospace;
+      background-color: #030712;
+      color: #38bdf8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 16px;
+    }
+    .panel {
+      background: #0b0f19;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 24px;
+      width: 100%;
+      max-width: 720px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #f1f5f9;
+    }
+    .status-badge {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #94a3b8;
+    }
+    .status-badge.record {
+      background: #f59e0b;
+      color: #000;
+      font-weight: bold;
+    }
+    .log-window {
+      background: #020617;
+      border: 1px solid #0f172a;
+      border-radius: 8px;
+      height: 380px;
+      overflow-y: auto;
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    /* 壓縮包樣式 */
+    details {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      padding: 6px 10px;
+      color: #94a3b8;
+    }
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+      color: #f59e0b;
+      user-select: none;
+    }
+    summary:hover {
+      color: #fbbf24;
+    }
+    .compressed-content {
+      margin-top: 8px;
+      padding-left: 12px;
+      border-left: 2px solid #f59e0b;
+      font-size: 12px;
+      color: #64748b;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    /* 即時展開行 */
+    .log-line {
+      display: flex;
+      justify-content: space-between;
+      color: #94a3b8;
+    }
+    .log-line.active {
+      color: #38bdf8;
+    }
+    .log-line.record-break {
+      color: #f59e0b;
+      font-weight: bold;
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 16px;
+    }
+    button {
+      font-family: inherit;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:active { opacity: 0.7; }
+    .btn-step { background: #2563eb; color: #fff; }
+    .btn-run { background: #059669; color: #fff; }
+    .btn-warp { background: #d97706; color: #fff; }
+    .btn-stop { background: #dc2626; color: #fff; }
+    .btn-clear { grid-column: span 4; background: #1e293b; color: #94a3b8; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <div class="panel">
+    <div class="header">
+      <div class="title">⚡ 10的倍數：自動摺疊壓縮日誌</div>
+      <div class="status-badge" id="badge">準備就緒</div>
+    </div>
+
+    <div class="log-window" id="logWindow">
+      <div id="archiveArea"></div>
+      <div id="liveArea">
+        <div style="color: #64748b;">// 點擊下方按鈕開始計算...</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-step" onclick="generateBatch(1)">單步 +10</button>
+      <button class="btn-run" onclick="startAuto(50, 5)">連續輸出</button>
+      <button class="btn-warp" onclick="startAuto(10, 50)">高速計算</button>
+      <button class="btn-stop" onclick="stopAuto()">暫停</button>
+      <button class="btn-clear" onclick="clearLogs()">清空紀錄</button>
+    </div>
+  </div>
+
+  <script>
+    let step = 0;
+    let timer = null;
+    const MAX_LIVE_ROWS = 30; // 畫面上最多只保留 30 筆展開，其餘自動打包壓縮
+    const COMPACT_BLOCK_SIZE = 500; // 每累積 500 筆算式就封裝成一個歷史壓縮區塊
+
+    const logWindow = document.getElementById('logWindow');
+    const archiveArea = document.getElementById('archiveArea');
+    const liveArea = document.getElementById('liveArea');
+    const badge = document.getElementById('badge');
+
+    let pendingArchive = [];
+
+    function formatLineText(s) {
+      const res = s * 10;
+      return `[第 ${s.toLocaleString()} 步] 10 × ${s.toLocaleString()} = ${res.toLocaleString()}`;
+    }
+
+    function createLogElement(s) {
+      const res = s * 10;
+      const row = document.createElement('div');
+      row.className = 'log-line active';
+
+      if (res === 1000000) {
+        row.className += ' record-break';
+        row.innerHTML = `<span>${formatLineText(s)}</span> <span>👑 達成世界紀錄！</span>`;
+        badge.className = 'status-badge record';
+        badge.textContent = '🎉 達成 1,000,000 世界紀錄！';
+      } else if (res > 1000000) {
+        row.className += ' record-break';
+        row.innerHTML = `<span>${formatLineText(s)}</span> <span>🔥 突破紀錄</span>`;
+      } else {
+        row.innerHTML = `<span>${formatLineText(s)}</span>`;
+      }
+      return row;
+    }
+
+    function compressLogs() {
+      // 當 liveArea 裡的行數超過門檻，將最舊的行抽離並轉移至壓縮區塊
+      while (liveArea.children.length > MAX_LIVE_ROWS) {
+        const oldestNode = liveArea.firstElementChild;
+        if (oldestNode.dataset && oldestNode.dataset.step) {
+          pendingArchive.push(formatLineText(Number(oldestNode.dataset.step)));
+        }
+        liveArea.removeChild(oldestNode);
+
+        // 每當累積足夠筆數，就封裝成一個 HTML <details> 摺疊標籤
+        if (pendingArchive.length >= COMPACT_BLOCK_SIZE) {
+          createArchiveBlock();
+        }
+      }
+    }
+
+    function createArchiveBlock() {
+      if (pendingArchive.length === 0) return;
+      
+      const details = document.createElement('details');
+      const summary = document.createElement('summary');
+      const content = document.createElement('div');
+      content.className = 'compressed-content';
+
+      const firstText = pendingArchive[0].split(']')[0].replace('[', '');
+      const lastText = pendingArchive[pendingArchive.length - 1].split(']')[0].replace('[', '');
+
+      summary.textContent = `📁 已壓縮歷史算式：${firstText} ~ ${lastText} (${pendingArchive.length} 筆)`;
+      content.innerHTML = pendingArchive.join('<br>');
+
+      details.appendChild(summary);
+      details.appendChild(content);
+      archiveArea.appendChild(details);
+
+      pendingArchive = []; // 清空待存陣列
+    }
+
+    function generateBatch(count) {
+      // 移除初始提示字
+      if (step === 0 && liveArea.children.length > 0) {
+        liveArea.innerHTML = '';
+      }
+
+      for (let i = 0; i < count; i++) {
+        step++;
+        const row = createLogElement(step);
+        row.dataset.step = step;
+        liveArea.appendChild(row);
+      }
+
+      compressLogs();
+      logWindow.scrollTop = logWindow.scrollHeight;
+    }
+
+    function startAuto(speedMs, batchSize) {
+      stopAuto();
+      timer = setInterval(() => {
+        generateBatch(batchSize);
+      }, speedMs);
+    }
+
+    function stopAuto() {
+      if (timer !== null) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function clearLogs() {
+      stopAuto();
+      step = 0;
+      pendingArchive = [];
+      archiveArea.innerHTML = '';
+      liveArea.innerHTML = '<div style="color: #64748b;">// 日誌已清空，準備重新計算...</div>';
+      badge.className = 'status-badge';
+      badge.textContent = '準備就緒';
+    }
+  </script>
+
+</body>
+</html>

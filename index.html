@@ -269,6 +269,7 @@
       }
     }
 
+    // ★ 核心修復：確保暫停瞬間終止線程，單步運算直接由主畫面接管，零吃字 ★
     function postAction(action, data) {
       const t = i18n[currentLang];
       if (action === 'start') {
@@ -279,13 +280,13 @@
         w.postMessage({ action, data });
       } else if (action === 'stop') {
         isRunning = false;
-        killWorker(); // 核心修復：物理終止 Worker 線程，保證瞬間剎車
+        killWorker(); // 物理終止 Worker，瞬間剎車
         if (step * 10 < 1000000) badge.textContent = t.paused;
       } else if (action === 'step') {
-        isRunning = true;
-        const w = getOrCreateWorker();
-        w.postMessage({ action, data });
-        setTimeout(() => { isRunning = false; }, 0);
+        isRunning = false; // 單步狀態視同暫停自動運算
+        killWorker();      // 確保沒有背景任務干擾
+        generateBatch(data); // 直接在主畫面印出 1 步，絕對不會吃字
+        if (step * 10 < 1000000) badge.textContent = t.paused;
       }
       saveState();
     }
@@ -483,4 +484,3 @@
 
 </body>
 </html>
-

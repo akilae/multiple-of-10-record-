@@ -2,7 +2,8 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>10的倍數 - 極速破紀錄與記憶體壓縮引擎</title>
+  <title>10x Record Breaker - 終極完美版</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -34,14 +35,19 @@
       padding-bottom: 12px;
       margin-bottom: 16px;
     }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: bold;
       color: #f1f5f9;
     }
     .status-badge {
       font-size: 12px;
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 6px;
       background: #1e293b;
       color: #94a3b8;
@@ -51,17 +57,26 @@
       color: #000;
       font-weight: bold;
     }
+    .offline-alert {
+      display: none;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      border-radius: 8px;
+      color: #34d399;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
     .log-window {
       background: #020617;
       border: 1px solid #0f172a;
       border-radius: 8px;
-      height: 380px;
+      height: 360px;
       overflow-y: auto;
       padding: 14px;
       font-size: 13px;
       line-height: 1.6;
     }
-    /* 壓縮包樣式 */
     details {
       background: rgba(30, 41, 59, 0.5);
       border: 1px solid #334155;
@@ -76,9 +91,6 @@
       color: #f59e0b;
       user-select: none;
     }
-    summary:hover {
-      color: #fbbf24;
-    }
     .compressed-content {
       margin-top: 8px;
       padding-left: 12px;
@@ -88,15 +100,12 @@
       max-height: 150px;
       overflow-y: auto;
     }
-    /* 即時展開行 */
     .log-line {
       display: flex;
       justify-content: space-between;
       color: #94a3b8;
     }
-    .log-line.active {
-      color: #38bdf8;
-    }
+    .log-line.active { color: #38bdf8; }
     .log-line.record-break {
       color: #f59e0b;
       font-weight: bold;
@@ -108,7 +117,7 @@
       gap: 8px;
       margin-top: 16px;
     }
-    button {
+    button.ctrl-btn {
       font-family: inherit;
       padding: 10px;
       font-size: 13px;
@@ -118,7 +127,7 @@
       cursor: pointer;
       transition: opacity 0.15s;
     }
-    button:active { opacity: 0.7; }
+    button.ctrl-btn:active { opacity: 0.7; }
     .btn-step { background: #2563eb; color: #fff; }
     .btn-run { background: #059669; color: #fff; }
     .btn-warp { background: #d97706; color: #fff; }
@@ -130,42 +139,190 @@
 
   <div class="panel">
     <div class="header">
-      <div class="title">⚡ 10的倍數：自動摺疊壓縮日誌</div>
-      <div class="status-badge" id="badge">準備就緒</div>
+      <div class="header-left">
+        <div class="title" id="txtTitle">⚡ 10的倍數：持久化離線計算</div>
+        <div class="status-badge" id="badge">準備就緒</div>
+      </div>
+      <button onclick="toggleLanguage()" id="langSwitch" style="background:#1e293b; color:#fff; border:1px solid #334155; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:12px;">EN / 中文</button>
     </div>
+
+    <div class="offline-alert" id="offlineAlert"></div>
 
     <div class="log-window" id="logWindow">
       <div id="archiveArea"></div>
       <div id="liveArea">
-        <div style="color: #64748b;">// 點擊下方按鈕開始計算...</div>
+        <div style="color: #64748b;" id="txtPlaceholder">// 點擊下方按鈕開始計算（支援關閉背景續算）...</div>
       </div>
     </div>
 
     <div class="controls">
-      <button class="btn-step" onclick="generateBatch(1)">單步 +10</button>
-      <button class="btn-run" onclick="startAuto(50, 5)">連續輸出</button>
-      <button class="btn-warp" onclick="startAuto(10, 50)">高速計算</button>
-      <button class="btn-stop" onclick="stopAuto()">暫停</button>
-      <button class="btn-clear" onclick="clearLogs()">清空紀錄</button>
+      <button class="ctrl-btn btn-step" onclick="postAction('step', 1)" id="btnStep">單步 +10</button>
+      <button class="ctrl-btn btn-run" onclick="postAction('start', { speed: 50, batch: 5 })" id="btnRun">連續輸出</button>
+      <button class="ctrl-btn btn-warp" onclick="postAction('start', { speed: 50, batch: 500 })" id="btnWarp">極速批次</button>
+      <button class="ctrl-btn btn-stop" onclick="postAction('stop')" id="btnStop">暫停</button>
+      <button class="ctrl-btn btn-clear" onclick="clearAllData()" id="btnClear">清空所有紀錄與存檔</button>
     </div>
   </div>
 
   <script>
+    const i18n = {
+      'zh-TW': {
+        title: '⚡ 10的倍數：持久化離線計算',
+        ready: '準備就緒',
+        placeholder: '// 點擊下方按鈕開始計算（支援關閉背景續算）...',
+        stepBtn: '單步 +10',
+        runBtn: '連續輸出',
+        warpBtn: '極速批次',
+        stopBtn: '暫停',
+        clearBtn: '清空所有紀錄與存檔',
+        recordAchieved: '🎉 達成 1,000,000 世界紀錄！',
+        stepPrefix: '第',
+        stepSuffix: '步'
+      },
+      'en': {
+        title: '⚡ 10x Multiples: Offline Engine',
+        ready: 'Ready',
+        placeholder: '// Click buttons below to start (Supports offline progress)...',
+        stepBtn: 'Step +10',
+        runBtn: 'Auto Stream',
+        warpBtn: 'Hyper Batch',
+        stopBtn: 'Pause',
+        clearBtn: 'Clear All Data',
+        recordAchieved: '🎉 1,000,000 Record Broken!',
+        stepPrefix: 'Step',
+        stepSuffix: ''
+      }
+    };
+
+    let currentLang = 'zh-TW';
     let step = 0;
-    let timer = null;
-    const MAX_LIVE_ROWS = 30; // 畫面上最多只保留 30 筆展開，其餘自動打包壓縮
-    const COMPACT_BLOCK_SIZE = 500; // 每累積 500 筆算式就封裝成一個歷史壓縮區塊
+    let isRunning = false; // 關鍵：運行狀態鎖
+    let currentConfig = { speed: 50, batch: 5 };
+    let hasPlayedAudio = false;
+
+    const MAX_LIVE_ROWS = 30;
+    const COMPACT_BLOCK_SIZE = 500;
 
     const logWindow = document.getElementById('logWindow');
     const archiveArea = document.getElementById('archiveArea');
     const liveArea = document.getElementById('liveArea');
     const badge = document.getElementById('badge');
+    const offlineAlert = document.getElementById('offlineAlert');
 
     let pendingArchive = [];
 
+    // --- Web Worker 背景引擎 ---
+    const workerScript = `
+      let timer = null;
+      self.onmessage = function(e) {
+        const { action, data } = e.data;
+        if (action === 'step') {
+          self.postMessage({ type: 'batch', count: data });
+        } else if (action === 'start') {
+          if (timer) clearInterval(timer);
+          timer = setInterval(() => {
+            self.postMessage({ type: 'batch', count: data.batch });
+          }, data.speed);
+        } else if (action === 'stop') {
+          if (timer) { clearInterval(timer); timer = null; }
+        }
+      };
+    `;
+    const blob = new Blob([workerScript], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+
+    // 接收 Worker 數據
+    worker.onmessage = function(e) {
+      if (!isRunning) return; // 【關鍵修復】：如果已經按了暫停，瞬間丟棄排隊中的多餘數字！
+      if (e.data.type === 'batch') {
+        generateBatch(e.data.count);
+        saveState();
+      }
+    };
+
+    function postAction(action, data) {
+      if (action === 'start') {
+        isRunning = true;
+        currentConfig = data;
+      } else if (action === 'stop') {
+        isRunning = false; // 瞬間阻斷渲染閘門
+      }
+      saveState();
+      worker.postMessage({ action, data });
+    }
+
+    // --- 離線狀態保存與時間追趕 ---
+    function saveState() {
+      const state = {
+        step: step,
+        isRunning: isRunning,
+        currentConfig: currentConfig,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('counter_10x_state', JSON.stringify(state));
+    }
+
+    function checkOfflineProgress() {
+      const saved = localStorage.getItem('counter_10x_state');
+      if (!saved) return;
+
+      try {
+        const state = JSON.parse(saved);
+        step = state.step || 0;
+        isRunning = state.isRunning || false;
+        currentConfig = state.currentConfig || { speed: 50, batch: 5 };
+
+        if (step > 0) {
+          liveArea.innerHTML = '';
+          const restoreStart = Math.max(1, step - 10);
+          for (let s = restoreStart; s <= step; s++) {
+            const row = createLogElement(s);
+            row.dataset.step = s;
+            liveArea.appendChild(row);
+          }
+        }
+
+        if (isRunning && state.timestamp) {
+          const elapsedMs = Date.now() - state.timestamp;
+          const batchesPassed = Math.floor(elapsedMs / currentConfig.speed);
+          const offlineSteps = batchesPassed * currentConfig.batch;
+
+          if (offlineSteps > 0) {
+            const previousStep = step;
+            step += offlineSteps;
+
+            offlineAlert.style.display = 'block';
+            offlineAlert.innerHTML = `⚡ <b>離線進度結算：</b> 在你離開的 ${(elapsedMs / 1000).toFixed(1)} 秒內，引擎自動為你補算了 <b>${offlineSteps.toLocaleString()}</b> 次計算！`;
+
+            createBulkArchiveBlock(previousStep + 1, step);
+            generateBatch(1);
+          }
+          worker.postMessage({ action: 'start', data: currentConfig });
+        }
+      } catch (e) {
+        console.error('State load error', e);
+      }
+    }
+
+    function createBulkArchiveBlock(fromStep, toStep) {
+      const details = document.createElement('details');
+      const summary = document.createElement('summary');
+      const content = document.createElement('div');
+      content.className = 'compressed-content';
+
+      const total = toStep - fromStep + 1;
+      summary.textContent = `📁 離線背景批量計算：第 ${fromStep.toLocaleString()} 步 ~ 第 ${toStep.toLocaleString()} 步 (共 ${total.toLocaleString()} 筆)`;
+      content.innerHTML = `[第 ${fromStep} 步] 10 × ${fromStep} = ${fromStep * 10}<br>... 期間已自動計算完成 ...<br>[第 ${toStep} 步] 10 × ${toStep} = ${toStep * 10}`;
+
+      details.appendChild(summary);
+      details.appendChild(content);
+      archiveArea.appendChild(details);
+    }
+
     function formatLineText(s) {
-      const res = s * 10;
-      return `[第 ${s.toLocaleString()} 步] 10 × ${s.toLocaleString()} = ${res.toLocaleString()}`;
+      const t = i18n[currentLang];
+      const stepText = currentLang === 'zh-TW' ? `${t.stepPrefix} ${s.toLocaleString()} ${t.stepSuffix}` : `${t.stepPrefix} ${s.toLocaleString()}`;
+      return `[${stepText}] 10 × ${s.toLocaleString()} = ${(s * 10).toLocaleString()}`;
     }
 
     function createLogElement(s) {
@@ -173,14 +330,16 @@
       const row = document.createElement('div');
       row.className = 'log-line active';
 
-      if (res === 1000000) {
+      if (res >= 1000000) {
         row.className += ' record-break';
         row.innerHTML = `<span>${formatLineText(s)}</span> <span>👑 達成世界紀錄！</span>`;
         badge.className = 'status-badge record';
-        badge.textContent = '🎉 達成 1,000,000 世界紀錄！';
-      } else if (res > 1000000) {
-        row.className += ' record-break';
-        row.innerHTML = `<span>${formatLineText(s)}</span> <span>🔥 突破紀錄</span>`;
+        badge.textContent = i18n[currentLang].recordAchieved;
+
+        if (!hasPlayedAudio && res === 1000000) {
+          if (typeof confetti === 'function') confetti({ particleCount: 120, spread: 80 });
+          hasPlayedAudio = true;
+        }
       } else {
         row.innerHTML = `<span>${formatLineText(s)}</span>`;
       }
@@ -188,7 +347,6 @@
     }
 
     function compressLogs() {
-      // 當 liveArea 裡的行數超過門檻，將最舊的行抽離並轉移至壓縮區塊
       while (liveArea.children.length > MAX_LIVE_ROWS) {
         const oldestNode = liveArea.firstElementChild;
         if (oldestNode.dataset && oldestNode.dataset.step) {
@@ -196,74 +354,75 @@
         }
         liveArea.removeChild(oldestNode);
 
-        // 每當累積足夠筆數，就封裝成一個 HTML <details> 摺疊標籤
         if (pendingArchive.length >= COMPACT_BLOCK_SIZE) {
-          createArchiveBlock();
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          const content = document.createElement('div');
+          content.className = 'compressed-content';
+
+          const firstText = pendingArchive[0].split(']')[0].replace('[', '');
+          const lastText = pendingArchive[pendingArchive.length - 1].split(']')[0].replace('[', '');
+
+          summary.textContent = `📁 已壓縮歷史算式：${firstText} ~ ${lastText} (${pendingArchive.length} 筆)`;
+          content.innerHTML = pendingArchive.join('<br>');
+
+          details.appendChild(summary);
+          details.appendChild(content);
+          archiveArea.appendChild(details);
+
+          pendingArchive = [];
         }
       }
     }
 
-    function createArchiveBlock() {
-      if (pendingArchive.length === 0) return;
-      
-      const details = document.createElement('details');
-      const summary = document.createElement('summary');
-      const content = document.createElement('div');
-      content.className = 'compressed-content';
-
-      const firstText = pendingArchive[0].split(']')[0].replace('[', '');
-      const lastText = pendingArchive[pendingArchive.length - 1].split(']')[0].replace('[', '');
-
-      summary.textContent = `📁 已壓縮歷史算式：${firstText} ~ ${lastText} (${pendingArchive.length} 筆)`;
-      content.innerHTML = pendingArchive.join('<br>');
-
-      details.appendChild(summary);
-      details.appendChild(content);
-      archiveArea.appendChild(details);
-
-      pendingArchive = []; // 清空待存陣列
-    }
-
     function generateBatch(count) {
-      // 移除初始提示字
-      if (step === 0 && liveArea.children.length > 0) {
-        liveArea.innerHTML = '';
-      }
-
+      if (step === 0 && liveArea.children.length > 0) liveArea.innerHTML = '';
       for (let i = 0; i < count; i++) {
         step++;
         const row = createLogElement(step);
         row.dataset.step = step;
         liveArea.appendChild(row);
       }
-
       compressLogs();
       logWindow.scrollTop = logWindow.scrollHeight;
     }
 
-    function startAuto(speedMs, batchSize) {
-      stopAuto();
-      timer = setInterval(() => {
-        generateBatch(batchSize);
-      }, speedMs);
+    function clearAllData() {
+      postAction('stop');
+      localStorage.removeItem('counter_10x_state');
+      step = 0;
+      hasPlayedAudio = false;
+      pendingArchive = [];
+      archiveArea.innerHTML = '';
+      offlineAlert.style.display = 'none';
+      const t = i18n[currentLang];
+      liveArea.innerHTML = `<div style="color: #64748b;">${t.placeholder}</div>`;
+      badge.className = 'status-badge';
+      badge.textContent = t.ready;
     }
 
-    function stopAuto() {
-      if (timer !== null) {
-        clearInterval(timer);
-        timer = null;
+    function toggleLanguage() {
+      currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
+      const t = i18n[currentLang];
+      document.getElementById('txtTitle').textContent = t.title;
+      document.getElementById('btnStep').textContent = t.stepBtn;
+      document.getElementById('btnRun').textContent = t.runBtn;
+      document.getElementById('btnWarp').textContent = t.warpBtn;
+      document.getElementById('btnStop').textContent = t.stopBtn;
+      document.getElementById('btnClear').textContent = t.clearBtn;
+      if (step === 0) {
+        badge.textContent = t.ready;
+        document.getElementById('txtPlaceholder').textContent = t.placeholder;
       }
     }
 
-    function clearLogs() {
-      stopAuto();
-      step = 0;
-      pendingArchive = [];
-      archiveArea.innerHTML = '';
-      liveArea.innerHTML = '<div style="color: #64748b;">// 日誌已清空，準備重新計算...</div>';
-      badge.className = 'status-badge';
-      badge.textContent = '準備就緒';
-    }
+    window.addEventListener('beforeunload', saveState);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveState();
+      else checkOfflineProgress();
+    });
+
+    checkOfflineProgress();
   </script>
 
 </body>

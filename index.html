@@ -2,10 +2,11 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>2x 全球極速共建引擎</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; user-select: none; }
     body {
       font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
       background-color: #030712; color: #38bdf8;
@@ -22,11 +23,20 @@
       margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 10px;
     }
     .title { font-size: 16px; font-weight: bold; color: #f1f5f9; }
+    
+    .header-right { display: flex; gap: 10px; align-items: center; }
     .online-badge {
       display: flex; align-items: center; gap: 6px;
       background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981;
       color: #34d399; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;
     }
+    .lang-btn {
+      background: #1e293b; color: #f1f5f9; border: 1px solid #334155; 
+      padding: 4px 10px; border-radius: 14px; cursor: pointer; 
+      font-size: 12px; font-family: inherit; font-weight: bold; transition: 0.2s;
+    }
+    .lang-btn:active { background: #334155; }
+    
     .online-dot {
       width: 8px; height: 8px; background: #10b981; border-radius: 50%;
       box-shadow: 0 0 8px #10b981; animation: pulse 1.5s infinite;
@@ -43,7 +53,7 @@
     
     .log-window {
       background: #020617; border: 1px solid #0f172a; border-radius: 8px;
-      height: 260px; overflow-y: auto; padding: 12px; font-size: 13px; line-height: 1.6;
+      height: 240px; overflow-y: auto; padding: 12px; font-size: 13px; line-height: 1.6;
       text-align: left; margin-bottom: 16px;
     }
     details {
@@ -59,12 +69,38 @@
     .log-line.active { color: #38bdf8; }
     .log-line.record-break { color: #f59e0b; font-weight: bold; background: rgba(245, 158, 11, 0.1); }
 
+    .slider-captcha-container { margin-bottom: 16px; }
+    .slider-track {
+      position: relative; width: 100%; height: 48px;
+      background: #111827; border: 1px solid #334155; border-radius: 24px;
+      overflow: hidden; display: flex; align-items: center; justify-content: center;
+    }
+    .slider-track-text {
+      color: #94a3b8; font-size: 13px; font-weight: bold; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .slider-fill {
+      position: absolute; left: 0; top: 0; height: 100%; width: 0;
+      background: rgba(16, 185, 129, 0.25); pointer-events: none;
+    }
+    .slider-handle {
+      position: absolute; left: 2px; top: 2px; width: 44px; height: 44px;
+      background: #0284c7; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; color: #ffffff;
+      font-size: 18px; font-weight: bold; cursor: grab; box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      touch-action: none;
+    }
+    .slider-handle:active { cursor: grabbing; background: #0369a1; }
+    .slider-track.verified { background: rgba(16, 185, 129, 0.15); border-color: #10b981; }
+    .slider-track.verified .slider-track-text { color: #34d399; }
+
     .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    button {
+    button.ctrl-btn {
       padding: 12px; font-size: 14px; font-weight: bold; border: none;
       border-radius: 8px; cursor: pointer; transition: 0.15s; font-family: inherit;
     }
-    button:active { transform: scale(0.95); }
+    button.ctrl-btn:disabled { background: #1e293b !important; color: #64748b !important; cursor: not-allowed; opacity: 0.6; }
+    button.ctrl-btn:active:not(:disabled) { transform: scale(0.95); }
     .btn-step { background: #2563eb; color: #fff; }
     .btn-auto { background: #059669; color: #fff; }
     .btn-stop { background: #dc2626; color: #fff; grid-column: span 2; }
@@ -81,15 +117,27 @@
 
   <div class="panel">
     <div class="header-bar">
-      <div class="title">⚡ 2x 全網二進制極速引擎</div>
-      <div class="online-badge">
-        <div class="online-dot"></div>
-        <span id="onlineCount">連線中...</span>
+      <div class="title" id="txtTitle">⚡ 2x 全網二進制極速引擎</div>
+      <div class="header-right">
+        <div class="online-badge">
+          <div class="online-dot"></div>
+          <span id="onlineCount">連線中...</span>
+        </div>
+        <button class="lang-btn" id="langSwitch">English</button>
       </div>
     </div>
     
-    <div class="global-number" id="displayGlobal">連線中...</div>
+    <div class="global-number" id="displayGlobal">...</div>
     <div class="status-text" id="statusTxt">等待連線中...</div>
+
+    <!-- 滑動驗證元件 -->
+    <div class="slider-captcha-container" id="captchaContainer">
+      <div class="slider-track" id="sliderTrack">
+        <div class="slider-fill" id="sliderFill"></div>
+        <div class="slider-track-text" id="sliderText">➔ 向右滑動以解鎖算力引擎</div>
+        <div class="slider-handle" id="sliderHandle">⚡</div>
+      </div>
+    </div>
 
     <div class="log-window" id="logWindow">
       <div id="archiveArea"></div>
@@ -99,15 +147,89 @@
     </div>
 
     <div class="controls">
-      <button class="btn-step" id="btnStep">手動貢獻 +200</button>
-      <button class="btn-auto" id="btnAuto">🚀 啟動極速狂飆引擎</button>
-      <button class="btn-stop" id="btnStop" style="display: none;">🛑 停止狂飆</button>
+      <button class="ctrl-btn btn-step" id="btnStep" disabled>手動貢獻 +200</button>
+      <button class="ctrl-btn btn-auto" id="btnAuto" disabled>🚀 啟動極速狂飆引擎</button>
+      <button class="ctrl-btn btn-stop" id="btnStop" style="display: none;">🛑 停止狂飆</button>
     </div>
 
     <div class="debug-box" id="debugLog">系統日誌：初始化中...</div>
   </div>
 
   <script>
+    // --- 雙語設定 (i18n) ---
+    const i18n = {
+      'zh-TW': {
+        title: '⚡ 2x 全網二進制極速引擎',
+        langBtn: 'English',
+        online: '共算人數：{0} 人',
+        connecting: '等待連線中...',
+        synced: '✅ 已同步全網最新算式進度，等待你的貢獻...',
+        sliderPrompt: '➔ 向右滑動以解鎖算力引擎',
+        sliderVerified: '🛡️ 驗證通過，算力引擎已就緒！',
+        placeholder: '// 連線成功後將即時同步全網算式...',
+        btnStep: '手動貢獻 +200',
+        btnAuto: '🚀 啟動極速狂飆引擎',
+        btnStop: '🛑 停止狂飆',
+        stopped: '🛑 引擎已停止，等待算式結算...',
+        uploading: '⚡ 正在將 {0} 步算式高速上傳...',
+        success: '🔥 成功為全網貢獻了 {0}！',
+        stepLog: '[第 {0} 步] 2 × {0} = {1}',
+        record: '👑 突破百萬極限！',
+        compressHeader: '📁 已壓縮全網同步算式：第 {0} 步 ~ 第 {1} 步 ({2} 筆)',
+        hyperSync: '⚡ 全網極速狂飆：第 {0} 步 ~ 第 {1} 步',
+        hyperMiddle: '... 期間全網連線高速完成 ...'
+      },
+      'en': {
+        title: '⚡ 2x Global Hyper Engine',
+        langBtn: '繁體中文',
+        online: 'Online: {0}',
+        connecting: 'Waiting for connection...',
+        synced: '✅ Synced with global network, awaiting input...',
+        sliderPrompt: '➔ Slide right to unlock engine',
+        sliderVerified: '🛡️ Verified! Engine is ready!',
+        placeholder: '// Live global calculations will sync here...',
+        btnStep: 'Manual +200',
+        btnAuto: '🚀 Start Hyper Engine',
+        btnStop: '🛑 Stop Engine',
+        stopped: '🛑 Engine stopped, finalizing...',
+        uploading: '⚡ High-speed uploading {0} steps...',
+        success: '🔥 Successfully contributed {0}!',
+        stepLog: '[Step {0}] 2 × {0} = {1}',
+        record: '👑 1M Limit Broken!',
+        compressHeader: '📁 Compressed Logs: Step {0} ~ {1} ({2} records)',
+        hyperSync: '⚡ Global Hyper Sync: Step {0} ~ {1}',
+        hyperMiddle: '... Global fast-forward complete ...'
+      }
+    };
+    let currentLang = 'zh-TW';
+
+    // ✨ 修正了 i18n 翻譯的替換 Bug：使用 split.join 確保字串內所有 {0} 都會被正確替換
+    function t(key, ...args) {
+      let str = i18n[currentLang][key];
+      args.forEach((arg, i) => { str = str.split(`{${i}}`).join(arg); });
+      return str;
+    }
+
+    function updateStaticUI() {
+      document.getElementById('txtTitle').textContent = t('title');
+      document.getElementById('langSwitch').textContent = t('langBtn');
+      if (!isVerified) document.getElementById('sliderText').textContent = t('sliderPrompt');
+      else document.getElementById('sliderText').textContent = t('sliderVerified');
+      if(document.getElementById('placeholder')) document.getElementById('placeholder').textContent = t('placeholder');
+      document.getElementById('btnStep').textContent = t('btnStep');
+      document.getElementById('btnAuto').textContent = t('btnAuto');
+      document.getElementById('btnStop').textContent = t('btnStop');
+      
+      const currentCount = typeof onlineUserCount !== 'undefined' ? onlineUserCount : 1;
+      document.getElementById('onlineCount').textContent = t('online', currentCount);
+    }
+
+    document.getElementById('langSwitch').addEventListener('click', () => {
+      currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
+      updateStaticUI();
+    });
+
+    // --- Firebase 與核心邏輯 ---
     function logMsg(msg) {
       const dbg = document.getElementById('debugLog');
       if (dbg) dbg.innerHTML = `系統日誌：${msg}`;
@@ -126,7 +248,6 @@
 
     try {
       if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      logMsg("Firebase 初始化成功，正在連接資料庫...");
     } catch (e) {
       logMsg("❌ 初始化失敗: " + e.message);
     }
@@ -145,77 +266,95 @@
     const btnAuto = document.getElementById('btnAuto');
     const btnStop = document.getElementById('btnStop');
 
-    let currentKnownSteps = 0;
-    let localPendingSteps = 0;
-    let autoTimer = null;
-    let hasPlayedAudio = false;
-    let pendingArchive = [];
-    const MAX_LIVE_ROWS = 25;
-    const COMPACT_BLOCK_SIZE = 200;
+    let currentKnownSteps = 0, localPendingSteps = 0, autoTimer = null, hasPlayedAudio = false;
+    let pendingArchive = [], onlineUserCount = 1;
+    const MAX_LIVE_ROWS = 25, COMPACT_BLOCK_SIZE = 200;
 
-    // Presence 心跳在線監聽
+    // --- 滑動解鎖邏輯 ---
+    const track = document.getElementById('sliderTrack'), handle = document.getElementById('sliderHandle');
+    const fill = document.getElementById('sliderFill'), sliderText = document.getElementById('sliderText');
+    let isDragging = false, isVerified = false, startX = 0;
+
+    function handleStart(e) {
+      if (isVerified) return;
+      isDragging = true;
+      startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    }
+
+    function handleMove(e) {
+      if (!isDragging || isVerified) return;
+      const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      const maxDistance = track.clientWidth - handle.clientWidth - 4;
+      let moveDistance = currentX - startX;
+      if (moveDistance < 0) moveDistance = 0;
+      if (moveDistance > maxDistance) moveDistance = maxDistance;
+
+      handle.style.left = `${moveDistance + 2}px`;
+      fill.style.width = `${moveDistance + handle.clientWidth / 2}px`;
+
+      if (moveDistance >= maxDistance - 4) {
+        isVerified = true; isDragging = false;
+        handle.style.left = `${maxDistance + 2}px`; fill.style.width = '100%';
+        track.classList.add('verified'); handle.innerHTML = '✔'; handle.style.background = '#10b981';
+        sliderText.textContent = t('sliderVerified');
+        btnStep.disabled = false; btnAuto.disabled = false;
+        if (typeof confetti === 'function') confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+      }
+    }
+
+    function handleEnd() {
+      if (!isDragging || isVerified) return;
+      isDragging = false;
+      handle.style.transition = 'left 0.25s ease'; fill.style.transition = 'width 0.25s ease';
+      handle.style.left = '2px'; fill.style.width = '0px';
+      setTimeout(() => { handle.style.transition = ''; fill.style.transition = ''; }, 250);
+    }
+
+    handle.addEventListener('mousedown', handleStart); window.addEventListener('mousemove', handleMove); window.addEventListener('mouseup', handleEnd);
+    handle.addEventListener('touchstart', handleStart, { passive: true }); window.addEventListener('touchmove', handleMove, { passive: false }); window.addEventListener('touchend', handleEnd);
+
+    // --- 在線人數 ---
     const myPresenceRef = onlineUsersRef.push();
     db.ref(".info/connected").on("value", (snap) => {
       if (snap.val() === true) {
         logMsg("🟢 已成功連線至雲端資料庫！");
-        myPresenceRef.onDisconnect().remove();
-        myPresenceRef.set(true);
-      } else {
-        logMsg("🟡 雲端連線交握中 / 離線...");
+        myPresenceRef.onDisconnect().remove(); myPresenceRef.set(true);
       }
     });
 
     onlineUsersRef.on("value", (snap) => {
-      const count = snap.numChildren() || 1;
-      onlineCount.textContent = `共算人數：${count} 人`;
+      onlineUserCount = snap.numChildren() || 1;
+      onlineCount.textContent = t('online', onlineUserCount);
     });
 
-    function formatLineText(s) {
-      return `[第 ${s.toLocaleString()} 步] 2 × ${s.toLocaleString()} = ${(s * 2).toLocaleString()}`;
-    }
+    function formatLineText(s) { return t('stepLog', s.toLocaleString(), (s * 2).toLocaleString()); }
 
     function createLogElement(s) {
-      const res = s * 2;
-      const row = document.createElement('div');
+      const res = s * 2, row = document.createElement('div');
       row.className = 'log-line active';
-
       if (res >= 1000000) {
         row.className += ' record-break';
-        row.innerHTML = `<span>${formatLineText(s)}</span> <span>👑 突破百萬極限！</span>`;
-        if (!hasPlayedAudio) {
-          if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 90 });
-          hasPlayedAudio = true;
-        }
-      } else {
-        row.innerHTML = `<span>${formatLineText(s)}</span>`;
-      }
+        row.innerHTML = `<span>${formatLineText(s)}</span> <span>${t('record')}</span>`;
+        if (!hasPlayedAudio) { if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 90 }); hasPlayedAudio = true; }
+      } else { row.innerHTML = `<span>${formatLineText(s)}</span>`; }
       return row;
     }
 
     function compressLogs() {
       while (liveArea.children.length > MAX_LIVE_ROWS) {
         const oldestNode = liveArea.firstElementChild;
-        if (oldestNode.dataset && oldestNode.dataset.step) {
-          pendingArchive.push(formatLineText(Number(oldestNode.dataset.step)));
-        }
+        if (oldestNode.dataset && oldestNode.dataset.step) pendingArchive.push(Number(oldestNode.dataset.step));
         liveArea.removeChild(oldestNode);
 
         if (pendingArchive.length >= COMPACT_BLOCK_SIZE) {
-          const details = document.createElement('details');
-          const summary = document.createElement('summary');
-          const content = document.createElement('div');
+          const details = document.createElement('details'), summary = document.createElement('summary'), content = document.createElement('div');
           content.className = 'compressed-content';
-
-          const firstText = pendingArchive[0].split(']')[0].replace('[', '');
-          const lastText = pendingArchive[pendingArchive.length - 1].split(']')[0].replace('[', '');
-
-          summary.textContent = `📁 已壓縮全網同步算式：${firstText} ~ ${lastText} (${pendingArchive.length} 筆)`;
-          content.innerHTML = pendingArchive.join('<br>');
-
-          details.appendChild(summary);
-          details.appendChild(content);
-          archiveArea.appendChild(details);
-
+          const firstStep = pendingArchive[0], lastStep = pendingArchive[pendingArchive.length - 1];
+          
+          summary.textContent = t('compressHeader', firstStep.toLocaleString(), lastStep.toLocaleString(), pendingArchive.length);
+          content.innerHTML = pendingArchive.map(s => formatLineText(s)).join('<br>');
+          
+          details.appendChild(summary); details.appendChild(content); archiveArea.appendChild(details);
           pendingArchive = [];
         }
       }
@@ -226,103 +365,61 @@
       if (ph) ph.remove();
 
       if (toStep - fromStep > 30) {
-        const details = document.createElement('details');
-        const summary = document.createElement('summary');
-        const content = document.createElement('div');
+        const details = document.createElement('details'), summary = document.createElement('summary'), content = document.createElement('div');
         content.className = 'compressed-content';
+        summary.textContent = t('hyperSync', fromStep.toLocaleString(), toStep.toLocaleString());
+        content.innerHTML = `${formatLineText(fromStep)}<br>${t('hyperMiddle')}<br>${formatLineText(toStep)}`;
+        details.appendChild(summary); details.appendChild(content); archiveArea.appendChild(details);
 
-        summary.textContent = `⚡ 全網極速狂飆：第 ${fromStep.toLocaleString()} 步 ~ 第 ${toStep.toLocaleString()} 步`;
-        content.innerHTML = `[第 ${fromStep} 步] 2 × ${fromStep} = ${fromStep * 2}<br>... 期間全網連線高速完成 ...<br>[第 ${toStep} 步] 2 × ${toStep} = ${toStep * 2}`;
-        details.appendChild(summary);
-        details.appendChild(content);
-        archiveArea.appendChild(details);
-
-        const startRender = Math.max(fromStep, toStep - 10);
-        for (let s = startRender; s <= toStep; s++) {
-          const row = createLogElement(s);
-          row.dataset.step = s;
-          liveArea.appendChild(row);
+        for (let s = Math.max(fromStep, toStep - 10); s <= toStep; s++) {
+          const row = createLogElement(s); row.dataset.step = s; liveArea.appendChild(row);
         }
       } else {
         for (let s = fromStep; s <= toStep; s++) {
-          const row = createLogElement(s);
-          row.dataset.step = s;
-          liveArea.appendChild(row);
+          const row = createLogElement(s); row.dataset.step = s; liveArea.appendChild(row);
         }
       }
-
-      compressLogs();
-      logWindow.scrollTop = logWindow.scrollHeight;
+      compressLogs(); logWindow.scrollTop = logWindow.scrollHeight;
     }
 
-    // 即時監聽雲端資料庫
     counterRef.on('value', (snapshot) => {
       const globalSteps = snapshot.val() || 0;
       displayGlobal.textContent = (globalSteps * 2).toLocaleString();
-
       if (globalSteps > currentKnownSteps) {
-        const previous = currentKnownSteps === 0 ? Math.max(1, globalSteps - 5) : currentKnownSteps + 1;
-        appendStepsToLog(previous, globalSteps);
+        appendStepsToLog(currentKnownSteps === 0 ? Math.max(1, globalSteps - 5) : currentKnownSteps + 1, globalSteps);
         currentKnownSteps = globalSteps;
       }
-
-      if (statusTxt.textContent === "等待連線中...") {
-        statusTxt.textContent = "✅ 已同步全網最新算式進度，等待你的貢獻...";
+      if (statusTxt.textContent === i18n['zh-TW']['connecting'] || statusTxt.textContent === i18n['en']['connecting']) {
+        statusTxt.textContent = t('synced');
       }
-    }, (error) => {
-      logMsg("❌ 讀取權限錯誤: " + error.message);
     });
 
-    // 極速節流打包上傳 (每 500ms 打包一次)
     function syncToCloud() {
       if (localPendingSteps > 0) {
-        const stepsToUpload = localPendingSteps;
-        localPendingSteps = 0;
-        statusTxt.textContent = `⚡ 正在將 ${stepsToUpload.toLocaleString()} 步算式高速上傳...`;
-
-        counterRef.transaction((currentGlobalSteps) => {
-          return (currentGlobalSteps || 0) + stepsToUpload;
-        }, (error, committed) => {
-          if (committed) {
-            statusTxt.textContent = `🔥 成功為全網貢獻了 ${(stepsToUpload * 2).toLocaleString()}！`;
-          } else if (error) {
-            logMsg("❌ 上傳失敗: " + error.message);
-            localPendingSteps += stepsToUpload;
-          }
+        const stepsToUpload = localPendingSteps; localPendingSteps = 0;
+        statusTxt.textContent = t('uploading', stepsToUpload.toLocaleString());
+        counterRef.transaction((curr) => (curr || 0) + stepsToUpload, (error, committed) => {
+          if (committed) statusTxt.textContent = t('success', (stepsToUpload * 2).toLocaleString());
+          else { logMsg("❌ 上傳失敗"); localPendingSteps += stepsToUpload; }
         });
       }
     }
     setInterval(syncToCloud, 500);
 
-    // 控制按鈕
-    btnStep.addEventListener('click', () => {
-      localPendingSteps += 100; // 單步直接貢獻 100 步 (+200)
-      statusTxt.textContent = "👆 高速算式打包上傳中...";
-    });
-
+    btnStep.addEventListener('click', () => { localPendingSteps += 100; });
     btnAuto.addEventListener('click', () => {
       if (autoTimer) return;
-      btnStep.style.display = 'none';
-      btnAuto.style.display = 'none';
-      btnStop.style.display = 'block';
-      statusTxt.textContent = "🔥 極速引擎狂飆中...";
-
-      // 每 4ms 產生 500 步（極限運算輸出）
-      autoTimer = setInterval(() => {
-        localPendingSteps += 500;
-      }, 4);
+      btnStep.style.display = 'none'; btnAuto.style.display = 'none'; btnStop.style.display = 'block';
+      autoTimer = setInterval(() => { localPendingSteps += 500; }, 4);
     });
-
     btnStop.addEventListener('click', () => {
-      if (autoTimer) {
-        clearInterval(autoTimer);
-        autoTimer = null;
-      }
-      btnStep.style.display = 'block';
-      btnAuto.style.display = 'block';
-      btnStop.style.display = 'none';
-      statusTxt.textContent = "🛑 引擎已停止，等待算式結算...";
+      if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+      btnStep.style.display = ''; btnAuto.style.display = ''; btnStop.style.display = 'none';
+      statusTxt.textContent = t('stopped');
     });
+
+    // 初始化翻譯
+    updateStaticUI();
   </script>
 </body>
 </html>

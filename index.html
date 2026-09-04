@@ -2,485 +2,137 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>10x Record Breaker</title>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <title>2x 全球共建引擎</title>
   <style>
     * { box-sizing: border-box; }
     body {
-      font-family: "SF Mono", Monaco, "Cascadia Code", "Courier New", monospace;
-      background-color: #030712;
-      color: #38bdf8;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 16px;
+      font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+      background-color: #030712; color: #38bdf8;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; margin: 0; padding: 16px;
     }
     .panel {
-      background: #0b0f19;
-      border: 1px solid #1e293b;
-      border-radius: 14px;
-      padding: 24px;
-      width: 100%;
-      max-width: 720px;
+      background: #0b0f19; border: 1px solid #1e293b; border-radius: 14px;
+      padding: 30px; width: 100%; max-width: 600px; text-align: center;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #1e293b;
-      padding-bottom: 12px;
-      margin-bottom: 16px;
+    .title { font-size: 18px; font-weight: bold; color: #f1f5f9; margin-bottom: 20px; }
+    .global-number {
+      font-size: 46px; font-weight: bold; color: #f59e0b;
+      margin: 20px 0; text-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
     }
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .status-text { color: #10b981; font-size: 14px; margin-bottom: 20px; min-height: 20px; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button {
+      padding: 12px; font-size: 15px; font-weight: bold; border: none;
+      border-radius: 8px; cursor: pointer; transition: 0.15s; font-family: inherit;
     }
-    .title {
-      font-size: 15px;
-      font-weight: bold;
-      color: #f1f5f9;
-    }
-    .status-badge {
-      font-size: 12px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: #1e293b;
-      color: #94a3b8;
-    }
-    .status-badge.record {
-      background: #f59e0b;
-      color: #000;
-      font-weight: bold;
-    }
-    .lang-btn {
-      background: #1e293b;
-      color: #f1f5f9;
-      border: 1px solid #334155;
-      padding: 5px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-family: inherit;
-      font-weight: bold;
-    }
-    .lang-btn:active { background: #334155; }
-    .offline-alert {
-      display: none;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid #10b981;
-      border-radius: 8px;
-      color: #34d399;
-      padding: 10px 14px;
-      font-size: 13px;
-      margin-bottom: 14px;
-    }
-    .log-window {
-      background: #020617;
-      border: 1px solid #0f172a;
-      border-radius: 8px;
-      height: 360px;
-      overflow-y: auto;
-      padding: 14px;
-      font-size: 13px;
-      line-height: 1.6;
-    }
-    details {
-      background: rgba(30, 41, 59, 0.5);
-      border: 1px solid #334155;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      padding: 6px 10px;
-      color: #94a3b8;
-    }
-    summary {
-      cursor: pointer;
-      font-weight: bold;
-      color: #f59e0b;
-      user-select: none;
-    }
-    .compressed-content {
-      margin-top: 8px;
-      padding-left: 12px;
-      border-left: 2px solid #f59e0b;
-      font-size: 12px;
-      color: #64748b;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-    .log-line {
-      display: flex;
-      justify-content: space-between;
-      color: #94a3b8;
-    }
-    .log-line.active { color: #38bdf8; }
-    .log-line.record-break {
-      color: #f59e0b;
-      font-weight: bold;
-      background: rgba(245, 158, 11, 0.1);
-    }
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-top: 16px;
-    }
-    button.ctrl-btn {
-      font-family: inherit;
-      padding: 10px;
-      font-size: 13px;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: opacity 0.15s;
-    }
-    button.ctrl-btn:active { opacity: 0.7; }
+    button:active { transform: scale(0.95); }
     .btn-step { background: #2563eb; color: #fff; }
-    .btn-run { background: #059669; color: #fff; }
-    .btn-warp { background: #d97706; color: #fff; }
-    .btn-stop { background: #dc2626; color: #fff; }
-    .btn-clear { grid-column: span 4; background: #1e293b; color: #94a3b8; margin-top: 4px; }
+    .btn-auto { background: #059669; color: #fff; }
+    .btn-stop { background: #dc2626; color: #fff; grid-column: span 2; }
   </style>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
   <div class="panel">
-    <div class="header">
-      <div class="header-left">
-        <div class="title" id="txtTitle">⚡ 10的倍數：持久化離線計算</div>
-        <div class="status-badge" id="badge">準備就緒</div>
-      </div>
-      <button class="lang-btn" onclick="toggleLanguage()" id="langSwitch">English</button>
-    </div>
-
-    <div class="offline-alert" id="offlineAlert"></div>
-
-    <div class="log-window" id="logWindow">
-      <div id="archiveArea"></div>
-      <div id="liveArea">
-        <div style="color: #64748b;" id="txtPlaceholder">// 點擊下方按鈕開始計算...</div>
-      </div>
-    </div>
+    <div class="title">🌍 全網二進制總運算量 (Firebase)</div>
+    <div style="color: #64748b; font-size: 12px;">全世界共同累積的 2 的倍數</div>
+    
+    <div class="global-number" id="displayGlobal">連線中...</div>
+    <div class="status-text" id="statusTxt">等待你的貢獻...</div>
 
     <div class="controls">
-      <button class="ctrl-btn btn-step" onclick="postAction('step', 1)" id="btnStep">單步 +10</button>
-      <button class="ctrl-btn btn-run" onclick="postAction('start', { speed: 60, batch: 5 })" id="btnRun">連續輸出</button>
-      <button class="ctrl-btn btn-warp" onclick="postAction('start', { speed: 60, batch: 200 })" id="btnWarp">極速批次</button>
-      <button class="ctrl-btn btn-stop" onclick="postAction('stop')" id="btnStop">暫停</button>
-      <button class="ctrl-btn btn-clear" onclick="clearAllData()" id="btnClear">清空所有紀錄與存檔</button>
+      <button class="btn-step" id="btnStep">手動貢獻 +2</button>
+      <button class="btn-auto" id="btnAuto">啟動自動化引擎</button>
+      <button class="btn-stop" id="btnStop" style="display: none;">停止引擎</button>
     </div>
   </div>
 
   <script>
-    const i18n = {
-      'zh-TW': {
-        title: '⚡ 10的倍數：持久化離線計算',
-        ready: '準備就緒',
-        running: '正在計算中...',
-        paused: '已暫停',
-        placeholder: '// 點擊下方按鈕開始計算...',
-        stepBtn: '單步 +10',
-        runBtn: '連續輸出',
-        warpBtn: '極速批次',
-        stopBtn: '暫停',
-        clearBtn: '清空所有紀錄與存檔',
-        recordAchieved: '🎉 達成 1,000,000 世界紀錄！',
-        langBtnText: 'English',
-        stepPrefix: '第',
-        stepSuffix: '步'
-      },
-      'en': {
-        title: '⚡ 10x Multiples: Offline Engine',
-        ready: 'Ready',
-        running: 'Computing...',
-        paused: 'Paused',
-        placeholder: '// Click buttons below to start...',
-        stepBtn: 'Step +10',
-        runBtn: 'Auto Stream',
-        warpBtn: 'Hyper Batch',
-        stopBtn: 'Pause',
-        clearBtn: 'Clear All Data',
-        recordAchieved: '🎉 1,000,000 Record Broken!',
-        langBtnText: '繁體中文',
-        stepPrefix: 'Step',
-        stepSuffix: ''
-      }
+    // 已自動填入你的專屬 Firebase 配置
+    const firebaseConfig = {
+      apiKey: "AIzaSyCxDuuIwrRt8JGvgbEIMnjQm8zwZvhyL7s",
+      authDomain: "binary-limit-breaker.firebaseapp.com",
+      databaseURL: "https://binary-limit-breaker-default-rtdb.firebaseio.com",
+      projectId: "binary-limit-breaker",
+      storageBucket: "binary-limit-breaker.firebasestorage.app",
+      messagingSenderId: "278424467808",
+      appId: "1:278424467808:web:fceb3ddc3817f5d4230605"
     };
 
-    let currentLang = 'zh-TW';
-    let step = 0;
-    let isRunning = false;
-    let currentConfig = { speed: 60, batch: 5 };
-    let hasPlayedAudio = false;
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const counterRef = db.ref('global_2x_steps');
 
-    const MAX_LIVE_ROWS = 30;
-    const COMPACT_BLOCK_SIZE = 500;
+    const displayGlobal = document.getElementById('displayGlobal');
+    const statusTxt = document.getElementById('statusTxt');
+    const btnStep = document.getElementById('btnStep');
+    const btnAuto = document.getElementById('btnAuto');
+    const btnStop = document.getElementById('btnStop');
 
-    const logWindow = document.getElementById('logWindow');
-    const archiveArea = document.getElementById('archiveArea');
-    const liveArea = document.getElementById('liveArea');
-    const badge = document.getElementById('badge');
-    const offlineAlert = document.getElementById('offlineAlert');
+    let localPendingSteps = 0;
+    let autoTimer = null;
 
-    let pendingArchive = [];
-    let worker = null;
-
-    const workerScript = `
-      let timer = null;
-      self.onmessage = function(e) {
-        const { action, data } = e.data;
-        if (action === 'step') {
-          self.postMessage({ type: 'batch', count: data });
-        } else if (action === 'start') {
-          if (timer) clearInterval(timer);
-          timer = setInterval(() => {
-            self.postMessage({ type: 'batch', count: data.batch });
-          }, data.speed);
-        } else if (action === 'stop') {
-          if (timer) { clearInterval(timer); timer = null; }
-        }
-      };
-    `;
-    const workerBlobUrl = URL.createObjectURL(new Blob([workerScript], { type: 'application/javascript' }));
-
-    function getOrCreateWorker() {
-      if (!worker) {
-        worker = new Worker(workerBlobUrl);
-        worker.onmessage = function(e) {
-          if (!isRunning) return;
-          if (e.data.type === 'batch') {
-            generateBatch(e.data.count);
-            saveState();
-          }
-        };
-      }
-      return worker;
-    }
-
-    function killWorker() {
-      if (worker) {
-        worker.terminate();
-        worker = null;
-      }
-    }
-
-    // ★ 核心修復：確保暫停瞬間終止線程，單步運算直接由主畫面接管，零吃字 ★
-    function postAction(action, data) {
-      const t = i18n[currentLang];
-      if (action === 'start') {
-        isRunning = true;
-        currentConfig = data;
-        if (step * 10 < 1000000) badge.textContent = t.running;
-        const w = getOrCreateWorker();
-        w.postMessage({ action, data });
-      } else if (action === 'stop') {
-        isRunning = false;
-        killWorker(); // 物理終止 Worker，瞬間剎車
-        if (step * 10 < 1000000) badge.textContent = t.paused;
-      } else if (action === 'step') {
-        isRunning = false; // 單步狀態視同暫停自動運算
-        killWorker();      // 確保沒有背景任務干擾
-        generateBatch(data); // 直接在主畫面印出 1 步，絕對不會吃字
-        if (step * 10 < 1000000) badge.textContent = t.paused;
-      }
-      saveState();
-    }
-
-    function saveState() {
-      const state = {
-        step: step,
-        isRunning: isRunning,
-        currentConfig: currentConfig,
-        currentLang: currentLang,
-        timestamp: Date.now()
-      };
-      localStorage.setItem('counter_10x_state', JSON.stringify(state));
-    }
-
-    function checkOfflineProgress() {
-      const saved = localStorage.getItem('counter_10x_state');
-      if (!saved) return;
-
-      try {
-        const state = JSON.parse(saved);
-        step = state.step || 0;
-        isRunning = state.isRunning || false;
-        currentConfig = state.currentConfig || { speed: 60, batch: 5 };
-        if (state.currentLang && state.currentLang !== currentLang) {
-          toggleLanguage(state.currentLang);
-        }
-
-        if (step > 0) {
-          liveArea.innerHTML = '';
-          const restoreStart = Math.max(1, step - 10);
-          for (let s = restoreStart; s <= step; s++) {
-            const row = createLogElement(s);
-            row.dataset.step = s;
-            liveArea.appendChild(row);
-          }
-        }
-
-        if (isRunning && state.timestamp) {
-          const elapsedMs = Date.now() - state.timestamp;
-          const batchesPassed = Math.floor(elapsedMs / currentConfig.speed);
-          const offlineSteps = batchesPassed * currentConfig.batch;
-
-          if (offlineSteps > 0) {
-            const previousStep = step;
-            step += offlineSteps;
-
-            offlineAlert.style.display = 'block';
-            offlineAlert.innerHTML = `⚡ <b>離線進度結算：</b> 在你離開的 ${(elapsedMs / 1000).toFixed(1)} 秒內，引擎自動為你補算了 <b>${offlineSteps.toLocaleString()}</b> 次計算！`;
-
-            createBulkArchiveBlock(previousStep + 1, step);
-            generateBatch(1);
-          }
-          postAction('start', currentConfig);
-        }
-      } catch (e) {
-        console.error('State load error', e);
-      }
-    }
-
-    function createBulkArchiveBlock(fromStep, toStep) {
-      const details = document.createElement('details');
-      const summary = document.createElement('summary');
-      const content = document.createElement('div');
-      content.className = 'compressed-content';
-
-      const total = toStep - fromStep + 1;
-      summary.textContent = `📁 離線背景批量計算：第 ${fromStep.toLocaleString()} 步 ~ 第 ${toStep.toLocaleString()} 步 (共 ${total.toLocaleString()} 筆)`;
-      content.innerHTML = `[第 ${fromStep} 步] 10 × ${fromStep} = ${fromStep * 10}<br>... 期間已自動計算完成 ...<br>[第 ${toStep} 步] 10 × ${toStep} = ${toStep * 10}`;
-
-      details.appendChild(summary);
-      details.appendChild(content);
-      archiveArea.appendChild(details);
-    }
-
-    function formatLineText(s) {
-      const t = i18n[currentLang];
-      const stepText = currentLang === 'zh-TW' ? `${t.stepPrefix} ${s.toLocaleString()} ${t.stepSuffix}` : `${t.stepPrefix} ${s.toLocaleString()}`;
-      return `[${stepText}] 10 × ${s.toLocaleString()} = ${(s * 10).toLocaleString()}`;
-    }
-
-    function createLogElement(s) {
-      const res = s * 10;
-      const row = document.createElement('div');
-      row.className = 'log-line active';
-
-      if (res >= 1000000) {
-        row.className += ' record-break';
-        row.innerHTML = `<span>${formatLineText(s)}</span> <span>👑 達成世界紀錄！</span>`;
-        badge.className = 'status-badge record';
-        badge.textContent = i18n[currentLang].recordAchieved;
-
-        if (!hasPlayedAudio && res === 1000000) {
-          if (typeof confetti === 'function') confetti({ particleCount: 120, spread: 80 });
-          hasPlayedAudio = true;
-        }
-      } else {
-        row.innerHTML = `<span>${formatLineText(s)}</span>`;
-      }
-      return row;
-    }
-
-    function compressLogs() {
-      while (liveArea.children.length > MAX_LIVE_ROWS) {
-        const oldestNode = liveArea.firstElementChild;
-        if (oldestNode.dataset && oldestNode.dataset.step) {
-          pendingArchive.push(formatLineText(Number(oldestNode.dataset.step)));
-        }
-        liveArea.removeChild(oldestNode);
-
-        if (pendingArchive.length >= COMPACT_BLOCK_SIZE) {
-          const details = document.createElement('details');
-          const summary = document.createElement('summary');
-          const content = document.createElement('div');
-          content.className = 'compressed-content';
-
-          const firstText = pendingArchive[0].split(']')[0].replace('[', '');
-          const lastText = pendingArchive[pendingArchive.length - 1].split(']')[0].replace('[', '');
-
-          summary.textContent = `📁 已壓縮歷史算式：${firstText} ~ ${lastText} (${pendingArchive.length} 筆)`;
-          content.innerHTML = pendingArchive.join('<br>');
-
-          details.appendChild(summary);
-          details.appendChild(content);
-          archiveArea.appendChild(details);
-
-          pendingArchive = [];
-        }
-      }
-    }
-
-    function generateBatch(count) {
-      if (step === 0 && liveArea.children.length > 0) liveArea.innerHTML = '';
-      for (let i = 0; i < count; i++) {
-        step++;
-        const row = createLogElement(step);
-        row.dataset.step = step;
-        liveArea.appendChild(row);
-      }
-      compressLogs();
-      logWindow.scrollTop = logWindow.scrollHeight;
-    }
-
-    function clearAllData() {
-      postAction('stop');
-      localStorage.removeItem('counter_10x_state');
-      step = 0;
-      isRunning = false;
-      hasPlayedAudio = false;
-      pendingArchive = [];
-      archiveArea.innerHTML = '';
-      offlineAlert.style.display = 'none';
-      const t = i18n[currentLang];
-      liveArea.innerHTML = `<div style="color: #64748b;" id="txtPlaceholder">${t.placeholder}</div>`;
-      badge.className = 'status-badge';
-      badge.textContent = t.ready;
-    }
-
-    function toggleLanguage(forceLang) {
-      currentLang = forceLang || (currentLang === 'zh-TW' ? 'en' : 'zh-TW');
-      const t = i18n[currentLang];
-      
-      document.getElementById('txtTitle').textContent = t.title;
-      document.getElementById('langSwitch').textContent = t.langBtnText;
-      document.getElementById('btnStep').textContent = t.stepBtn;
-      document.getElementById('btnRun').textContent = t.runBtn;
-      document.getElementById('btnWarp').textContent = t.warpBtn;
-      document.getElementById('btnStop').textContent = t.stopBtn;
-      document.getElementById('btnClear').textContent = t.clearBtn;
-      
-      if (step * 10 >= 1000000) {
-        badge.textContent = t.recordAchieved;
-      } else if (isRunning) {
-        badge.textContent = t.running;
-      } else if (step > 0) {
-        badge.textContent = t.paused;
-      } else {
-        badge.textContent = t.ready;
-      }
-
-      const ph = document.getElementById('txtPlaceholder');
-      if (ph) ph.textContent = t.placeholder;
-
-      saveState();
-    }
-
-    window.addEventListener('beforeunload', saveState);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') saveState();
-      else checkOfflineProgress();
+    // 1. 即時監聽雲端資料庫
+    counterRef.on('value', (snapshot) => {
+      const globalSteps = snapshot.val() || 0;
+      displayGlobal.textContent = (globalSteps * 2).toLocaleString();
     });
 
-    checkOfflineProgress();
-  </script>
+    // 2. 節流打包上傳 (每 1.5 秒打包一次)
+    function syncToCloud() {
+      if (localPendingSteps > 0) {
+        const stepsToUpload = localPendingSteps;
+        localPendingSteps = 0;
+        statusTxt.textContent = `⚡ 正在將 ${stepsToUpload} 步打包上傳...`;
 
+        counterRef.transaction((currentGlobalSteps) => {
+          return (currentGlobalSteps || 0) + stepsToUpload;
+        }, (error, committed) => {
+          if (committed) {
+            statusTxt.textContent = `✅ 成功貢獻了 ${(stepsToUpload * 2).toLocaleString()} 的運算量！`;
+          } else if (error) {
+            console.error("同步失敗", error);
+            localPendingSteps += stepsToUpload;
+          }
+        });
+      }
+    }
+    setInterval(syncToCloud, 1500);
+
+    // 3. 按鈕互動事件
+    btnStep.addEventListener('click', () => {
+      localPendingSteps += 1;
+      statusTxt.textContent = "👆 準備上傳中...";
+    });
+
+    btnAuto.addEventListener('click', () => {
+      if (autoTimer) return;
+      btnStep.style.display = 'none';
+      btnAuto.style.display = 'none';
+      btnStop.style.display = 'block';
+      statusTxt.textContent = "🚀 自動化引擎狂飆中...";
+
+      autoTimer = setInterval(() => {
+        localPendingSteps += 100;
+      }, 10);
+    });
+
+    btnStop.addEventListener('click', () => {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+      btnStep.style.display = 'block';
+      btnAuto.style.display = 'block';
+      btnStop.style.display = 'none';
+      statusTxt.textContent = "🛑 引擎已停止，等待最後打包...";
+    });
+  </script>
 </body>
 </html>

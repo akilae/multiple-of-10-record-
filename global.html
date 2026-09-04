@@ -53,7 +53,6 @@
   </div>
 
   <script>
-    // 已自動填入你的專屬 Firebase 配置
     const firebaseConfig = {
       apiKey: "AIzaSyCxDuuIwrRt8JGvgbEIMnjQm8zwZvhyL7s",
       authDomain: "binary-limit-breaker.firebaseapp.com",
@@ -64,7 +63,6 @@
       appId: "1:278424467808:web:fceb3ddc3817f5d4230605"
     };
 
-    // 初始化 Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const counterRef = db.ref('global_2x_steps');
@@ -78,13 +76,11 @@
     let localPendingSteps = 0;
     let autoTimer = null;
 
-    // 1. 即時監聽雲端資料庫
     counterRef.on('value', (snapshot) => {
       const globalSteps = snapshot.val() || 0;
       displayGlobal.textContent = (globalSteps * 2).toLocaleString();
     });
 
-    // 2. 節流打包上傳 (每 1.5 秒打包一次)
     function syncToCloud() {
       if (localPendingSteps > 0) {
         const stepsToUpload = localPendingSteps;
@@ -105,7 +101,6 @@
     }
     setInterval(syncToCloud, 1500);
 
-    // 3. 按鈕互動事件
     btnStep.addEventListener('click', () => {
       localPendingSteps += 1;
       statusTxt.textContent = "👆 準備上傳中...";

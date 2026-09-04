@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <title>2x 全球共建引擎</title>
+  <title>2x 全球極速共建引擎</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -36,7 +36,7 @@
       50% { opacity: 0.4; transform: scale(0.85); }
     }
     .global-number {
-      font-size: 44px; font-weight: bold; color: #f59e0b;
+      font-size: 46px; font-weight: bold; color: #f59e0b;
       margin: 12px 0; text-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
     }
     .status-text { color: #10b981; font-size: 13px; margin-bottom: 12px; min-height: 18px; }
@@ -61,7 +61,7 @@
 
     .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     button {
-      padding: 10px; font-size: 14px; font-weight: bold; border: none;
+      padding: 12px; font-size: 14px; font-weight: bold; border: none;
       border-radius: 8px; cursor: pointer; transition: 0.15s; font-family: inherit;
     }
     button:active { transform: scale(0.95); }
@@ -81,7 +81,7 @@
 
   <div class="panel">
     <div class="header-bar">
-      <div class="title">🌍 2x 全網二進制分散式引擎</div>
+      <div class="title">⚡ 2x 全網二進制極速引擎</div>
       <div class="online-badge">
         <div class="online-dot"></div>
         <span id="onlineCount">連線中...</span>
@@ -99,9 +99,9 @@
     </div>
 
     <div class="controls">
-      <button class="btn-step" id="btnStep">手動貢獻 +2</button>
-      <button class="btn-auto" id="btnAuto">啟動自動化引擎</button>
-      <button class="btn-stop" id="btnStop" style="display: none;">停止引擎</button>
+      <button class="btn-step" id="btnStep">手動貢獻 +200</button>
+      <button class="btn-auto" id="btnAuto">🚀 啟動極速狂飆引擎</button>
+      <button class="btn-stop" id="btnStop" style="display: none;">🛑 停止狂飆</button>
     </div>
 
     <div class="debug-box" id="debugLog">系統日誌：初始化中...</div>
@@ -133,7 +133,7 @@
 
     const db = firebase.database();
     const counterRef = db.ref('global_2x_steps');
-    const onlineUsersRef = db.ref('online_users'); // 在線人數節點
+    const onlineUsersRef = db.ref('online_users');
 
     const displayGlobal = document.getElementById('displayGlobal');
     const statusTxt = document.getElementById('statusTxt');
@@ -153,21 +153,18 @@
     const MAX_LIVE_ROWS = 25;
     const COMPACT_BLOCK_SIZE = 200;
 
-    // 1. 在線人數心跳追蹤系統 (Presence System)
+    // Presence 心跳在線監聽
     const myPresenceRef = onlineUsersRef.push();
     db.ref(".info/connected").on("value", (snap) => {
       if (snap.val() === true) {
         logMsg("🟢 已成功連線至雲端資料庫！");
-        // 斷線時自動移除自己的節點
         myPresenceRef.onDisconnect().remove();
-        // 連線時寫入在線狀態
         myPresenceRef.set(true);
       } else {
         logMsg("🟡 雲端連線交握中 / 離線...");
       }
     });
 
-    // 監聽全網總在線人數
     onlineUsersRef.on("value", (snap) => {
       const count = snap.numChildren() || 1;
       onlineCount.textContent = `共算人數：${count} 人`;
@@ -234,8 +231,8 @@
         const content = document.createElement('div');
         content.className = 'compressed-content';
 
-        summary.textContent = `⚡ 全網高速推進：第 ${fromStep.toLocaleString()} 步 ~ 第 ${toStep.toLocaleString()} 步`;
-        content.innerHTML = `[第 ${fromStep} 步] 2 × ${fromStep} = ${fromStep * 2}<br>... 期間全網連線運算完成 ...<br>[第 ${toStep} 步] 2 × ${toStep} = ${toStep * 2}`;
+        summary.textContent = `⚡ 全網極速狂飆：第 ${fromStep.toLocaleString()} 步 ~ 第 ${toStep.toLocaleString()} 步`;
+        content.innerHTML = `[第 ${fromStep} 步] 2 × ${fromStep} = ${fromStep * 2}<br>... 期間全網連線高速完成 ...<br>[第 ${toStep} 步] 2 × ${toStep} = ${toStep * 2}`;
         details.appendChild(summary);
         details.appendChild(content);
         archiveArea.appendChild(details);
@@ -258,7 +255,7 @@
       logWindow.scrollTop = logWindow.scrollHeight;
     }
 
-    // 2. 即時監聽雲端資料庫
+    // 即時監聽雲端資料庫
     counterRef.on('value', (snapshot) => {
       const globalSteps = snapshot.val() || 0;
       displayGlobal.textContent = (globalSteps * 2).toLocaleString();
@@ -276,18 +273,18 @@
       logMsg("❌ 讀取權限錯誤: " + error.message);
     });
 
-    // 3. 節流打包上傳 (每 1.2 秒打包一次)
+    // 極速節流打包上傳 (每 500ms 打包一次)
     function syncToCloud() {
       if (localPendingSteps > 0) {
         const stepsToUpload = localPendingSteps;
         localPendingSteps = 0;
-        statusTxt.textContent = `⚡ 正在將 ${stepsToUpload} 步算式打包上傳...`;
+        statusTxt.textContent = `⚡ 正在將 ${stepsToUpload.toLocaleString()} 步算式高速上傳...`;
 
         counterRef.transaction((currentGlobalSteps) => {
           return (currentGlobalSteps || 0) + stepsToUpload;
         }, (error, committed) => {
           if (committed) {
-            statusTxt.textContent = `✅ 成功為全網貢獻了 ${(stepsToUpload * 2).toLocaleString()}！`;
+            statusTxt.textContent = `🔥 成功為全網貢獻了 ${(stepsToUpload * 2).toLocaleString()}！`;
           } else if (error) {
             logMsg("❌ 上傳失敗: " + error.message);
             localPendingSteps += stepsToUpload;
@@ -295,12 +292,12 @@
         });
       }
     }
-    setInterval(syncToCloud, 1200);
+    setInterval(syncToCloud, 500);
 
-    // 4. 控制按鈕
+    // 控制按鈕
     btnStep.addEventListener('click', () => {
-      localPendingSteps += 1;
-      statusTxt.textContent = "👆 算式打包上傳中...";
+      localPendingSteps += 100; // 單步直接貢獻 100 步 (+200)
+      statusTxt.textContent = "👆 高速算式打包上傳中...";
     });
 
     btnAuto.addEventListener('click', () => {
@@ -308,11 +305,12 @@
       btnStep.style.display = 'none';
       btnAuto.style.display = 'none';
       btnStop.style.display = 'block';
-      statusTxt.textContent = "🚀 自動化算式引擎狂飆中...";
+      statusTxt.textContent = "🔥 極速引擎狂飆中...";
 
+      // 每 4ms 產生 500 步（極限運算輸出）
       autoTimer = setInterval(() => {
-        localPendingSteps += 50;
-      }, 30);
+        localPendingSteps += 500;
+      }, 4);
     });
 
     btnStop.addEventListener('click', () => {

@@ -11,7 +11,9 @@
       font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
       background-color: #030712; color: #38bdf8;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 100vh; margin: 0; padding: 16px;
+      min-height: 100vh; margin: 0; 
+      /* 完美避開 iOS 底部橫條 */
+      padding: 16px 16px calc(16px + env(safe-area-inset-bottom)) 16px;
     }
     .panel {
       background: #0b0f19; border: 1px solid #1e293b; border-radius: 14px;
@@ -97,6 +99,8 @@
     .slider-handle:active { cursor: grabbing; background: #0369a1; }
     .slider-track.verified { background: rgba(16, 185, 129, 0.15); border-color: #10b981; padding-left: 0; }
     .slider-track.verified .slider-track-text { color: #34d399; }
+    /* 修正寬螢幕下打勾圓球的對齊問題 */
+    .slider-track.verified .slider-handle { left: auto !important; right: 2px !important; }
 
     .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     button.ctrl-btn {
@@ -134,7 +138,6 @@
     <div class="global-number" id="displayGlobal">...</div>
     <div class="status-text" id="statusTxt">等待連線中...</div>
 
-    <!-- 滑動驗證元件 -->
     <div class="slider-captcha-container" id="captchaContainer">
       <div class="slider-track" id="sliderTrack">
         <div class="slider-fill" id="sliderFill"></div>
@@ -311,8 +314,11 @@
 
       if (moveDistance >= maxDistance - 4) {
         isVerified = true; isDragging = false;
-        handle.style.left = `${maxDistance + 2}px`; fill.style.width = '100%';
-        track.classList.add('verified'); handle.innerHTML = '✔'; handle.style.background = '#10b981';
+        handle.style.left = ''; // 清除 inline left 避免覆蓋 CSS 的 right 定位
+        fill.style.width = '100%';
+        track.classList.add('verified'); 
+        handle.innerHTML = '✔'; 
+        handle.style.background = '#10b981';
         sliderText.textContent = t('sliderVerified');
         btnStep.disabled = false; btnAuto.disabled = false;
         if (typeof confetti === 'function') confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });

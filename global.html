@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>2x 全球極速共建引擎</title>
+  <title>⚡ 2x 全網二進制極速引擎</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; user-select: none; }
@@ -21,8 +21,9 @@
     .header-bar {
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 10px;
+      flex-wrap: wrap; gap: 10px;
     }
-    .title { font-size: 16px; font-weight: bold; color: #f1f5f9; }
+    .title { font-size: clamp(14px, 4vw, 16px); font-weight: bold; color: #f1f5f9; text-align: left; }
     
     .header-right { display: flex; gap: 10px; align-items: center; }
     .online-badge {
@@ -46,8 +47,10 @@
       50% { opacity: 0.4; transform: scale(0.85); }
     }
     .global-number {
-      font-size: 46px; font-weight: bold; color: #f59e0b;
+      font-size: clamp(32px, 10vw, 50px); 
+      font-weight: bold; color: #f59e0b;
       margin: 12px 0; text-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+      letter-spacing: -1px; word-break: break-all; line-height: 1.1;
     }
     .status-text { color: #10b981; font-size: 13px; margin-bottom: 12px; min-height: 18px; }
     
@@ -74,10 +77,11 @@
       position: relative; width: 100%; height: 48px;
       background: #111827; border: 1px solid #334155; border-radius: 24px;
       overflow: hidden; display: flex; align-items: center; justify-content: center;
+      padding-left: 44px; padding-right: 16px;
     }
     .slider-track-text {
       color: #94a3b8; font-size: 13px; font-weight: bold; pointer-events: none;
-      transition: opacity 0.2s;
+      transition: opacity 0.2s; text-align: center; width: 100%;
     }
     .slider-fill {
       position: absolute; left: 0; top: 0; height: 100%; width: 0;
@@ -91,7 +95,7 @@
       touch-action: none;
     }
     .slider-handle:active { cursor: grabbing; background: #0369a1; }
-    .slider-track.verified { background: rgba(16, 185, 129, 0.15); border-color: #10b981; }
+    .slider-track.verified { background: rgba(16, 185, 129, 0.15); border-color: #10b981; padding-left: 0; }
     .slider-track.verified .slider-track-text { color: #34d399; }
 
     .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -134,7 +138,7 @@
     <div class="slider-captcha-container" id="captchaContainer">
       <div class="slider-track" id="sliderTrack">
         <div class="slider-fill" id="sliderFill"></div>
-        <div class="slider-track-text" id="sliderText">➔ 向右滑動以解鎖算力引擎</div>
+        <div class="slider-track-text" id="sliderText">➔ 向右滑動解鎖引擎</div>
         <div class="slider-handle" id="sliderHandle">⚡</div>
       </div>
     </div>
@@ -156,6 +160,14 @@
   </div>
 
   <script>
+    // 🛡️ 防護罩：封印右鍵與開發者工具 (F12)
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('keydown', event => {
+      if (event.keyCode === 123 || (event.ctrlKey && event.shiftKey && event.keyCode === 73) || (event.metaKey && event.altKey && event.keyCode === 73)) {
+        event.preventDefault();
+      }
+    });
+
     // --- 雙語設定 (i18n) ---
     const i18n = {
       'zh-TW': {
@@ -164,7 +176,7 @@
         online: '共算人數：{0} 人',
         connecting: '等待連線中...',
         synced: '✅ 已同步全網最新算式進度，等待你的貢獻...',
-        sliderPrompt: '➔ 向右滑動以解鎖算力引擎',
+        sliderPrompt: '➔ 向右滑動解鎖引擎',
         sliderVerified: '🛡️ 驗證通過，算力引擎已就緒！',
         placeholder: '// 連線成功後將即時同步全網算式...',
         btnStep: '手動貢獻 +200',
@@ -177,7 +189,8 @@
         record: '👑 突破百萬極限！',
         compressHeader: '📁 已壓縮全網同步算式：第 {0} 步 ~ 第 {1} 步 ({2} 筆)',
         hyperSync: '⚡ 全網極速狂飆：第 {0} 步 ~ 第 {1} 步',
-        hyperMiddle: '... 期間全網連線高速完成 ...'
+        hyperMiddle: '... 期間全網連線高速完成 ...',
+        hackerAlert: '⚠️ 系統警告：請勿嘗試破解，請先完成滑動解鎖！'
       },
       'en': {
         title: '⚡ 2x Global Hyper Engine',
@@ -185,7 +198,7 @@
         online: 'Online: {0}',
         connecting: 'Waiting for connection...',
         synced: '✅ Synced with global network, awaiting input...',
-        sliderPrompt: '➔ Slide right to unlock engine',
+        sliderPrompt: '➔ Slide to unlock',
         sliderVerified: '🛡️ Verified! Engine is ready!',
         placeholder: '// Live global calculations will sync here...',
         btnStep: 'Manual +200',
@@ -198,12 +211,12 @@
         record: '👑 1M Limit Broken!',
         compressHeader: '📁 Compressed Logs: Step {0} ~ {1} ({2} records)',
         hyperSync: '⚡ Global Hyper Sync: Step {0} ~ {1}',
-        hyperMiddle: '... Global fast-forward complete ...'
+        hyperMiddle: '... Global fast-forward complete ...',
+        hackerAlert: '⚠️ Warning: Please complete the slider verification first!'
       }
     };
     let currentLang = 'zh-TW';
 
-    // ✨ 修正了 i18n 翻譯的替換 Bug：使用 split.join 確保字串內所有 {0} 都會被正確替換
     function t(key, ...args) {
       let str = i18n[currentLang][key];
       args.forEach((arg, i) => { str = str.split(`{${i}}`).join(arg); });
@@ -211,6 +224,7 @@
     }
 
     function updateStaticUI() {
+      document.title = t('title');
       document.getElementById('txtTitle').textContent = t('title');
       document.getElementById('langSwitch').textContent = t('langBtn');
       if (!isVerified) document.getElementById('sliderText').textContent = t('sliderPrompt');
@@ -283,6 +297,9 @@
 
     function handleMove(e) {
       if (!isDragging || isVerified) return;
+      
+      if (e.cancelable) e.preventDefault(); 
+      
       const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
       const maxDistance = track.clientWidth - handle.clientWidth - 4;
       let moveDistance = currentX - startX;
@@ -406,19 +423,31 @@
     }
     setInterval(syncToCloud, 500);
 
-    btnStep.addEventListener('click', () => { localPendingSteps += 100; });
+    // 🔒 雙重邏輯防護鎖 (變數驗證)
+    btnStep.addEventListener('click', () => { 
+      if (!isVerified) {
+        alert(t('hackerAlert'));
+        return;
+      }
+      localPendingSteps += 100; 
+    });
+
     btnAuto.addEventListener('click', () => {
+      if (!isVerified) {
+        alert(t('hackerAlert'));
+        return;
+      }
       if (autoTimer) return;
       btnStep.style.display = 'none'; btnAuto.style.display = 'none'; btnStop.style.display = 'block';
       autoTimer = setInterval(() => { localPendingSteps += 500; }, 4);
     });
+
     btnStop.addEventListener('click', () => {
       if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
       btnStep.style.display = ''; btnAuto.style.display = ''; btnStop.style.display = 'none';
       statusTxt.textContent = t('stopped');
     });
 
-    // 初始化翻譯
     updateStaticUI();
   </script>
 </body>

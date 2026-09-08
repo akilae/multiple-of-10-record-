@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>⚡ 2x 全網二進制極速引擎 (雙重登入版)</title>
+  <title>⚡ 2x 全網二進制極速引擎 (核彈防禦版)</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; user-select: none; }
@@ -25,26 +25,6 @@
     @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
     .global-number { font-size: clamp(32px, 10vw, 50px); font-weight: bold; color: #f59e0b; margin: 12px 0; text-shadow: 0 0 20px rgba(245, 158, 11, 0.4); letter-spacing: -1px; word-break: break-all; line-height: 1.1; }
     .status-text { color: #10b981; font-size: 13px; margin-bottom: 12px; min-height: 18px; }
-    
-    /* 登入區塊樣式 */
-    .auth-panel { background: #111827; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px; text-align: left; }
-    .auth-title { font-size: 14px; font-weight: bold; color: #f1f5f9; margin-bottom: 12px; }
-    .auth-input { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #334155; background: #020617; color: #fff; font-family: inherit; outline: none; transition: 0.2s; }
-    .auth-input:focus { border-color: #38bdf8; }
-    .auth-btn-group { display: flex; gap: 8px; margin-top: 4px; }
-    .auth-error { color: #ef4444; font-size: 12px; margin-top: 8px; min-height: 14px; text-align: center; }
-    .user-info { font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 8px; }
-    .btn-logout { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0; }
-    
-    .divider { display: flex; align-items: center; text-align: center; margin: 16px 0; color: #64748b; font-size: 12px; }
-    .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #334155; }
-    .divider:not(:empty)::before { margin-right: .5em; }
-    .divider:not(:empty)::after { margin-left: .5em; }
-
-    .btn-google { width: 100%; background: #ffffff; color: #1f2937; padding: 10px; font-size: 13px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
-    .btn-google:active { background: #e5e7eb; }
-    .btn-google img { width: 18px; height: 18px; }
-
     .log-window { background: #020617; border: 1px solid #0f172a; border-radius: 8px; height: 240px; overflow-y: auto; padding: 12px; font-size: 13px; line-height: 1.6; text-align: left; margin-bottom: 16px; }
     details { background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; margin-bottom: 6px; padding: 4px 8px; color: #94a3b8; }
     summary { cursor: pointer; font-weight: bold; color: #f59e0b; user-select: none; }
@@ -52,7 +32,7 @@
     .log-line { display: flex; justify-content: space-between; color: #94a3b8; }
     .log-line.active { color: #38bdf8; }
     .log-line.record-break { color: #f59e0b; font-weight: bold; background: rgba(245, 158, 11, 0.1); }
-    .slider-captcha-container { margin-bottom: 16px; display: none; }
+    .slider-captcha-container { margin-bottom: 16px; }
     .slider-track { position: relative; width: 100%; height: 48px; background: #111827; border: 1px solid #334155; border-radius: 24px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding-left: 44px; padding-right: 16px; }
     .slider-track-text { color: #94a3b8; font-size: 13px; font-weight: bold; pointer-events: none; transition: opacity 0.2s; text-align: center; width: 100%; }
     .slider-fill { position: absolute; left: 0; top: 0; height: 100%; width: 0; background: rgba(16, 185, 129, 0.25); pointer-events: none; }
@@ -62,7 +42,7 @@
     .slider-track.verified .slider-track-text { color: #34d399; }
     .slider-track.verified .slider-handle { left: auto !important; right: 2px !important; }
     
-    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; display: none; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     button.ctrl-btn { padding: 12px; font-size: 14px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; font-family: inherit; }
     button.ctrl-btn:disabled { background: #1e293b !important; color: #64748b !important; cursor: not-allowed; opacity: 0.6; }
     button.ctrl-btn:active:not(:disabled) { transform: scale(0.95); }
@@ -91,38 +71,15 @@
 
   <div class="panel">
     <div class="header-bar">
-      <div class="title" id="txtTitle">⚡ 2x 極速引擎</div>
+      <div class="title" id="txtTitle">⚡ 2x 全網二進制極速引擎</div>
       <div class="header-right">
-        <div class="online-badge"><div class="online-dot"></div><span id="onlineCount">檢查狀態中...</span></div>
+        <div class="online-badge"><div class="online-dot"></div><span id="onlineCount">驗證身分中...</span></div>
+        <button class="lang-btn" id="langSwitch">English</button>
       </div>
     </div>
     
-    <div class="user-info" id="userInfo" style="display: none;">
-      <span id="userEmailTxt"></span>
-      <button class="btn-logout" id="btnLogout">登出帳號</button>
-    </div>
-
     <div class="global-number" id="displayGlobal">...</div>
-    <div class="status-text" id="statusTxt">請先登入或註冊帳號</div>
-
-    <!-- 雙重登入區塊 -->
-    <div class="auth-panel" id="authPanel">
-      <div class="auth-title">🔐 驗證節點存取權限</div>
-      <input type="email" id="emailInput" class="auth-input" placeholder="請輸入 E-mail">
-      <input type="password" id="passwordInput" class="auth-input" placeholder="請輸入密碼 (至少 6 碼)">
-      <div class="auth-btn-group">
-        <button id="btnLogin" class="ctrl-btn btn-step" style="flex: 1; padding: 8px;">登入</button>
-        <button id="btnSignup" class="ctrl-btn btn-auto" style="flex: 1; padding: 8px;">註冊新帳號</button>
-      </div>
-      
-      <div class="divider">或</div>
-      
-      <button id="btnGoogle" class="btn-google">
-        <img src="https://www.google.com/favicon.ico" alt="Google"> 使用 Google 帳號一鍵登入
-      </button>
-
-      <div id="authError" class="auth-error"></div>
-    </div>
+    <div class="status-text" id="statusTxt">正在進行安全驗證...</div>
 
     <div class="slider-captcha-container" id="captchaContainer">
       <div class="slider-track" id="sliderTrack">
@@ -137,7 +94,7 @@
       <div id="liveArea"><div style="color: #64748b;" id="placeholder">// 安全連線建立後將即時同步全網算式...</div></div>
     </div>
 
-    <div class="controls" id="engineControls">
+    <div class="controls">
       <button class="ctrl-btn btn-step" id="btnStep" disabled>手動貢獻 +200</button>
       <button class="ctrl-btn btn-auto" id="btnAuto" disabled>🚀 啟動極速狂飆</button>
       <button class="ctrl-btn btn-stop" id="btnStop" style="display: none;">🛑 停止狂飆</button>
@@ -148,295 +105,7 @@
   </div>
 
   <script>
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    document.addEventListener('keydown', event => {
-      if (event.keyCode === 123 || (event.ctrlKey && event.shiftKey && event.keyCode === 73) || (event.metaKey && event.altKey && event.keyCode === 73)) {
-        event.preventDefault();
-      }
-    });
-
-    (function() {
-      function logMsg(msg) {
-        const dbg = document.getElementById('debugLog');
-        if (dbg) dbg.innerHTML = `系統日誌：${msg}`;
-        console.log(msg);
-      }
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyCxDuuIwrRt8JGvgbEIMnjQm8zwZvhyL7s",
-        authDomain: "binary-limit-breaker.firebaseapp.com",
-        databaseURL: "https://binary-limit-breaker-default-rtdb.firebaseio.com",
-        projectId: "binary-limit-breaker",
-        storageBucket: "binary-limit-breaker.firebasestorage.app",
-        messagingSenderId: "278424467808",
-        appId: "1:278424467808:web:fceb3ddc3817f5d4230605"
-      };
-
-      try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); } 
-      catch (e) { logMsg("❌ 初始化失敗: " + e.message); }
-
-      const db = firebase.database();
-      const auth = firebase.auth();
-      const googleProvider = new firebase.auth.GoogleAuthProvider();
-      const counterRef = db.ref('global_2x_steps');
-      const onlineUsersRef = db.ref('online_users');
-
-      // 介面元素綁定
-      const authPanel = document.getElementById('authPanel');
-      const emailInput = document.getElementById('emailInput');
-      const passwordInput = document.getElementById('passwordInput');
-      const authError = document.getElementById('authError');
-      const userInfo = document.getElementById('userInfo');
-      const userEmailTxt = document.getElementById('userEmailTxt');
-      const captchaContainer = document.getElementById('captchaContainer');
-      const engineControls = document.getElementById('engineControls');
-      const statusTxt = document.getElementById('statusTxt');
-
-      // 🔐 登入/註冊邏輯
-      document.getElementById('btnLogin').addEventListener('click', () => {
-        authError.textContent = '登入中...';
-        auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value)
-          .catch(error => authError.textContent = "登入失敗: " + error.message);
-      });
-
-      document.getElementById('btnSignup').addEventListener('click', () => {
-        authError.textContent = '註冊中...';
-        auth.createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
-          .catch(error => authError.textContent = "註冊失敗: " + error.message);
-      });
-
-      // 🌟 Google 一鍵登入邏輯
-      document.getElementById('btnGoogle').addEventListener('click', () => {
-        authError.textContent = 'Google 授權中...';
-        auth.signInWithPopup(googleProvider)
-          .catch(error => authError.textContent = "Google 登入失敗: " + error.message);
-      });
-
-      document.getElementById('btnLogout').addEventListener('click', () => {
-        stopEngine(); // 登出前先停止引擎
-        auth.signOut();
-      });
-
-      // 🔐 監聽使用者登入狀態
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          logMsg("🔓 已登入：" + user.email);
-          authPanel.style.display = 'none';
-          userInfo.style.display = 'flex';
-          userEmailTxt.textContent = "👤 " + user.email;
-          captchaContainer.style.display = 'block';
-          engineControls.style.display = 'grid';
-          statusTxt.textContent = '✅ 帳號驗證通過，請解鎖引擎';
-        } else {
-          logMsg("🔒 等待使用者登入");
-          authPanel.style.display = 'block';
-          userInfo.style.display = 'none';
-          captchaContainer.style.display = 'none';
-          engineControls.style.display = 'none';
-          statusTxt.textContent = '請先登入或註冊帳號';
-          
-          // 重置滑塊
-          isVerified = false;
-          btnStep.disabled = true; btnAuto.disabled = true; btnAfk.disabled = true;
-          handle.style.left = '2px'; fill.style.width = '0px';
-          track.classList.remove('verified'); handle.innerHTML = '⚡'; handle.style.background = '#0284c7';
-          sliderText.textContent = '➔ 向右滑動解鎖引擎';
-        }
-      });
-
-      // 引擎核心變數
-      const displayGlobal = document.getElementById('displayGlobal');
-      const afkGlobal = document.getElementById('afkGlobal');
-      const onlineCount = document.getElementById('onlineCount');
-      const logWindow = document.getElementById('logWindow');
-      const liveArea = document.getElementById('liveArea');
-      const archiveArea = document.getElementById('archiveArea');
-      const btnStep = document.getElementById('btnStep');
-      const btnAuto = document.getElementById('btnAuto');
-      const btnStop = document.getElementById('btnStop');
-      const btnAfk = document.getElementById('btnAfk');
-      const afkOverlay = document.getElementById('afkOverlay');
-
-      let currentKnownSteps = 0, localPendingSteps = 0, isRunning = false, hasPlayedAudio = false;
-      let pendingArchive = [], onlineUserCount = 1, wakeLock = null;
-      const MAX_LIVE_ROWS = 25, COMPACT_BLOCK_SIZE = 200, MAX_SAFE_UPLOAD = 140000; 
-
-      const workerBlobCode = `
-        let timer = null; let lastTick = 0;
-        self.onmessage = function(e) {
-          if (e.data === 'start') {
-            if (timer) return;
-            lastTick = Date.now();
-            timer = setInterval(() => {
-              const now = Date.now(); const elapsed = now - lastTick;
-              const ticks = Math.max(1, Math.floor(elapsed / 4));
-              lastTick = now - (elapsed % 4);
-              self.postMessage({ type: 'tick', count: 500 * ticks });
-            }, 4);
-          } else if (e.data === 'stop') {
-            if (timer) { clearInterval(timer); timer = null; }
-          }
-        };
-      `;
-      const workerBlob = new Blob([workerBlobCode], { type: 'application/javascript' });
-      const computeWorker = new Worker(URL.createObjectURL(workerBlob));
-
-      computeWorker.onmessage = function(e) {
-        if (e.data.type === 'tick' && isRunning) { localPendingSteps += e.data.count; }
-      };
-
-      async function enableWakeLock() {
-        try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } 
-        catch (err) { console.log('WakeLock error:', err); }
-      }
-      function disableWakeLock() {
-        if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
-      }
-
-      // 滑塊驗證邏輯
-      const track = document.getElementById('sliderTrack'), handle = document.getElementById('sliderHandle');
-      const fill = document.getElementById('sliderFill'), sliderText = document.getElementById('sliderText');
-      let isDragging = false, isVerified = false, startX = 0;
-
-      function handleStart(e) {
-        if (isVerified) return; isDragging = true;
-        startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-      }
-      function handleMove(e) {
-        if (!isDragging || isVerified) return;
-        if (e.cancelable) e.preventDefault(); 
-        const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const maxDistance = track.clientWidth - handle.clientWidth - 4;
-        let moveDistance = currentX - startX;
-        if (moveDistance < 0) moveDistance = 0;
-        if (moveDistance > maxDistance) moveDistance = maxDistance;
-
-        handle.style.left = `${moveDistance + 2}px`; fill.style.width = `${moveDistance + handle.clientWidth / 2}px`;
-        if (moveDistance >= maxDistance - 4) {
-          isVerified = true; isDragging = false;
-          handle.style.left = ''; fill.style.width = '100%';
-          track.classList.add('verified'); handle.innerHTML = '✔'; handle.style.background = '#10b981';
-          sliderText.textContent = '🛡️ 驗證通過，引擎已解鎖';
-          btnStep.disabled = false; btnAuto.disabled = false; btnAfk.disabled = false;
-          if (typeof confetti === 'function') confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
-        }
-      }
-      function handleEnd() {
-        if (!isDragging || isVerified) return; isDragging = false;
-        handle.style.transition = 'left 0.25s ease'; fill.style.transition = 'width 0.25s ease';
-        handle.style.left = '2px'; fill.style.width = '0px';
-        setTimeout(() => { handle.style.transition = ''; fill.style.transition = ''; }, 250);
-      }
-
-      handle.addEventListener('mousedown', handleStart); window.addEventListener('mousemove', handleMove); window.addEventListener('mouseup', handleEnd);
-      handle.addEventListener('touchstart', handleStart, { passive: true }); window.addEventListener('touchmove', handleMove, { passive: false }); window.addEventListener('touchend', handleEnd);
-
-      // Firebase 同步邏輯
-      const myPresenceRef = onlineUsersRef.push();
-      db.ref(".info/connected").on("value", (snap) => {
-        if (snap.val() === true) {
-          myPresenceRef.onDisconnect().remove(); myPresenceRef.set(true);
-        }
-      });
-      onlineUsersRef.on("value", (snap) => {
-        onlineUserCount = snap.numChildren() || 1;
-        onlineCount.textContent = `在線節點: ${onlineUserCount}`;
-      });
-
-      function formatLineText(s) { return `[第 ${s.toLocaleString()} 步] 2 × ${s.toLocaleString()} = ${(s*2).toLocaleString()}`; }
-      function createLogElement(s) {
-        const res = s * 2, row = document.createElement('div'); row.className = 'log-line active';
-        if (res >= 1000000) {
-          row.className += ' record-break';
-          row.innerHTML = `<span>${formatLineText(s)}</span> <span>👑 突破極限！</span>`;
-          if (!hasPlayedAudio) { if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 90 }); hasPlayedAudio = true; }
-        } else { row.innerHTML = `<span>${formatLineText(s)}</span>`; }
-        return row;
-      }
-
-      function compressLogs() {
-        while (liveArea.children.length > MAX_LIVE_ROWS) {
-          const oldestNode = liveArea.firstElementChild;
-          if (oldestNode.dataset && oldestNode.dataset.step) pendingArchive.push(Number(oldestNode.dataset.step));
-          liveArea.removeChild(oldestNode);
-          if (pendingArchive.length >= COMPACT_BLOCK_SIZE) {
-            const details = document.createElement('details'), summary = document.createElement('summary'), content = document.createElement('div');
-            content.className = 'compressed-content';
-            summary.textContent = `📁 已壓縮紀錄：第 ${pendingArchive[0].toLocaleString()} 步 ~ ${pendingArchive[pendingArchive.length - 1].toLocaleString()} 步`;
-            content.innerHTML = pendingArchive.map(s => formatLineText(s)).join('<br>');
-            details.appendChild(summary); details.appendChild(content); archiveArea.appendChild(details);
-            pendingArchive = [];
-          }
-        }
-      }
-
-      function appendStepsToLog(fromStep, toStep) {
-        const ph = document.getElementById('placeholder'); if (ph) ph.remove();
-        if (toStep - fromStep > 30) {
-          const details = document.createElement('details'), summary = document.createElement('summary'), content = document.createElement('div');
-          content.className = 'compressed-content';
-          summary.textContent = `⚡ 全網極速狂飆：第 ${fromStep.toLocaleString()} 步 ~ ${toStep.toLocaleString()} 步`;
-          content.innerHTML = `${formatLineText(fromStep)}<br>... 期間全網連線高速完成 ...<br>${formatLineText(toStep)}`;
-          details.appendChild(summary); details.appendChild(content); archiveArea.appendChild(details);
-          for (let s = Math.max(fromStep, toStep - 10); s <= toStep; s++) {
-            const row = createLogElement(s); row.dataset.step = s; liveArea.appendChild(row);
-          }
-        } else {
-          for (let s = fromStep; s <= toStep; s++) {
-            const row = createLogElement(s); row.dataset.step = s; liveArea.appendChild(row);
-          }
-        }
-        compressLogs(); logWindow.scrollTop = logWindow.scrollHeight;
-      }
-
-      counterRef.on('value', (snapshot) => {
-        const globalSteps = snapshot.val() || 0;
-        const formattedNum = (globalSteps * 2).toLocaleString();
-        displayGlobal.textContent = formattedNum; afkGlobal.textContent = formattedNum;
-        if (globalSteps > currentKnownSteps) {
-          appendStepsToLog(currentKnownSteps === 0 ? Math.max(1, globalSteps - 5) : currentKnownSteps + 1, globalSteps);
-          currentKnownSteps = globalSteps;
-        }
-      });
-
-      function syncToCloud() {
-        if (localPendingSteps > 0 && auth.currentUser) {
-          let stepsToUpload = Math.min(localPendingSteps, MAX_SAFE_UPLOAD);
-          localPendingSteps -= stepsToUpload; 
-          statusTxt.textContent = `⚡ 正在安全上傳 ${stepsToUpload.toLocaleString()} 步算式...`;
-          counterRef.transaction((curr) => (curr || 0) + stepsToUpload, (error, committed) => {
-            if (committed) { statusTxt.textContent = `🔥 成功為全網貢獻了 ${(stepsToUpload * 2).toLocaleString()}！`; } 
-            else { logMsg("❌ 上傳被拒絕"); localPendingSteps += stepsToUpload; }
-          });
-        }
-      }
-      setInterval(syncToCloud, 500);
-
-      function startEngine() {
-        if (!isVerified || !auth.currentUser) return;
-        if (isRunning) return; isRunning = true;
-        computeWorker.postMessage('start');
-        btnStep.style.display = 'none'; btnAuto.style.display = 'none'; 
-        btnStop.style.display = ''; btnAfk.style.gridColumn = 'span 1';
-      }
-
-      function stopEngine() {
-        isRunning = false; computeWorker.postMessage('stop');
-        localPendingSteps = 0; 
-        btnStep.style.display = ''; btnAuto.style.display = ''; 
-        btnStop.style.display = 'none'; btnAfk.style.gridColumn = 'span 2';
-        statusTxt.textContent = '🛑 引擎已停止'; disableWakeLock();
-      }
-
-      btnStep.addEventListener('click', (e) => { e.stopPropagation(); if (isVerified) localPendingSteps += 100; });
-      btnAuto.addEventListener('click', (e) => { e.stopPropagation(); startEngine(); });
-      btnStop.addEventListener('click', (e) => { e.stopPropagation(); stopEngine(); });
-      btnAfk.addEventListener('click', (e) => {
-        e.stopPropagation(); if (!isVerified) return;
-        startEngine(); enableWakeLock(); afkOverlay.style.display = 'flex';
-      });
-      afkOverlay.addEventListener('click', () => { afkOverlay.style.display = 'none'; stopEngine(); });
-    })();
+    Const _0x5244d5=_0x5f3c;function _0x5f3c(_0x1b3c4b,_0x57044a){_0x1b3c4b=_0x1b3c4b-0x168;const _0x5554c3=_0x5554();let _0x5f3c4d=_0x5554c3[_0x1b3c4b];return _0x5f3c4d;}function _0x5554(){const _0x520610=['Secure\x20Nodes:\x20{0}','💤\x20掛機省電模式','style','debugLog','touchend','substring','\x0a\x20\x20\x20\x20let\x20timer\x20=\x20null;\x0a\x20\x20\x20\x20let\x20lastTick\x20=\x200;\x0a\x20\x20\x20\x20self.onmessage\x20=\x20function(e)\x20{\x0a\x20\x20\x20\x20\x20\x20if\x20(e.data\x20===\x20\x27start\x27)\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20if\x20(timer)\x20return;\x0a\x20\x20\x20\x20\x20\x20\x20\x20lastTick\x20=\x20Date.now();\x0a\x20\x20\x20\x20\x20\x20\x20\x20timer\x20=\x20setInterval(()\x20=>\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20const\x20now\x20=\x20Date.now();\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20const\x20elapsed\x20=\x20now\x20-\x20lastTick;\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20const\x20ticks\x20=\x20Math.max(1,\x20Math.floor(elapsed\x20/\x204));\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20lastTick\x20=\x20now\x20-\x20(elapsed\x20%\x204);\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20self.postMessage({\x20type:\x20\x27tick\x27,\x20count:\x20500\x20*\x20ticks\x20});\x0a\x20\x20\x20\x20\x20\x20\x20\x20},\x204);\x0a\x20\x20\x20\x20\x20\x20}\x20else\x20if\x20(e.data\x20===\x20\x27stop\x27)\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20if\x20(timer)\x20{\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20clearInterval(timer);\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20timer\x20=\x20null;\x0a\x20\x20\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20\x20\x20}\x0a\x20\x20\x20\x20};\x0a\x20\x20','span\x201','<span>','uid','createObjectURL','connecting','release','length','getElementById','💤\x20AFK\x20Mode','remove','flex','step','metaKey','繁體中文','2px','🟢\x20已成功連線至雲端資料庫！','btnAfk','global_2x_steps','none','</span>\x20<span>','278424467808','background','createElement','⚡\x20全網極速狂飆：第\x20{0}\x20步\x20~\x20第\x20{1}\x20步','btnAuto','logWindow','afkGlobal','✅\x20Authenticated\x20&\x20Synced!','compressed-content','textContent','langSwitch','altKey','//\x20Live\x20global\x20calculations\x20will\x20sync\x20here...','📁\x20Compressed\x20Logs:\x20Step\x20{0}\x20~\x20{1}\x20({2}\x20records)','initializeApp','postMessage','</span>','className','addEventListener','stopPropagation','span\x202','cancelable','stepLog','displayGlobal','Authenticating\x20securely...','scrollTop','sliderHandle','then','🔥\x20Successfully\x20contributed\x20{0}!','🛑\x20Stop\x20Engine','max','303705VeSQgD','⚡\x202x\x20全網二進制極速引擎','online_users','verified','preventDefault','apps','dataset','...','[第\x20{0}\x20步]\x202\x20×\x20{0}\x20=\x20{1}','45714CwmAsN','toLocaleString','sliderText','...\x20Global\x20fast-forward\x20complete\x20...','➔\x20向右滑動解鎖引擎','synced','100%','btnStep','appendChild','🔥\x20成功為全網貢獻了\x20{0}！','split','contextmenu','left','3oRkQen','🔒\x20匿名安全認證成功，UID:\x20','summary','min','clientWidth','8519HIMwQo','...\x20期間全網連線高速完成\x20...','removeChild','afkHint','sliderPrompt','//\x20安全連線建立後將即時同步全網算式...','mousedown','🛑\x20停止狂飆','Manual\x20+200','transition','(Tap\x20anywhere\x20to\x20instantly\x20stop)','hackerAlert','（點擊畫面任意處瞬間喚醒停止）','stop','placeholder','310570sGGGwY','keyCode','⚡\x20Securely\x20uploading\x20{0}\x20steps...','<br>','505480zOACBD','transaction','compressHeader','⚡\x202x\x20Global\x20Hyper\x20Engine','9ZSyURw','title','❌\x20初始化失敗:\x20','⚠️\x20系統警告：檢測到異常操作，請完成驗證！','ref','mousemove','sliderVerified','📁\x20已壓縮全網同步算式：第\x20{0}\x20步\x20~\x20第\x20{1}\x20步\x20({2}\x20筆)','stopped','div','disabled','🛑\x20引擎已停止，安全佇列已清空','hyperMiddle','2610072HyeeFM','set','1:278424467808:web:fceb3ddc3817f5d4230605','includes','gridColumn','record','🛡️\x20Verified!\x20Engine\x20is\x20ready!','3128290KMqWXm','mouseup','screen','touches','WakeLock\x20not\x20active:','message','➔\x20Slide\x20to\x20unlock','width','366sdrgYg','left\x200.25s\x20ease','🛑\x20Engine\x20stopped,\x20queue\x20cleared','firstElementChild','add','log-line\x20active','afkTitle','details','⚡\x20Global\x20Hyper\x20Sync:\x20Step\x20{0}\x20~\x20{1}','innerHTML','liveArea','statusTxt','正在建立匿名安全憑證...','zh-TW','wakeLock','btnStop','application/javascript','0px','afkOverlay','clientX','database','value','sliderTrack','AIzaSyCxDuuIwrRt8JGvgbEIMnjQm8zwZvhyL7s','4lYqHJN','❌\x20上傳被拒絕（請確認是否通過安全認證）','type','\x20record-break','user','val','txtTitle','touchmove','#10b981','⚠️\x20Warning:\x20Abnormal\x20behavior\x20detected!','手動貢獻\x20+200','push','request','touch','undefined','map','⚠️\x20認證失敗，請重新整理','log','signInAnonymously','numChildren','function','⚡\x20正在安全上傳\x20{0}\x20步算式...','🛡️\x20驗證通過，算力引擎已就緒！','display','click'];_0x5554=function(){return _0x520610;};return _0x5554();}(function(_0x11eafd,_0x1e3da0){const _0xa73099=_0x5f3c,_0x128e80=_0x11eafd();while(!![]){try{const _0x164978=parseInt(_0xa73099(0x21b))/0x1+-parseInt(_0xa73099(0x183))/0x2*(-parseInt(_0xa73099(0x16f))/0x3)+parseInt(_0xa73099(0x1bf))/0x4*(parseInt(_0xa73099(0x212))/0x5)+-parseInt(_0xa73099(0x1a7))/0x6*(-parseInt(_0xa73099(0x174))/0x7)+parseInt(_0xa73099(0x198))/0x8+-parseInt(_0xa73099(0x18b))/0x9*(parseInt(_0xa73099(0x187))/0xa)+-parseInt(_0xa73099(0x19f))/0xb;if(_0x164978===_0x1e3da0)break;else _0x128e80['push'](_0x128e80['shift']());}catch(_0x24bbcd){_0x128e80['push'](_0x128e80['shift']());}}}(_0x5554,0x4fe82),document[_0x5244d5(0x205)](_0x5244d5(0x16d),_0x5c3781=>_0x5c3781[_0x5244d5(0x216)]()),document['addEventListener']('keydown',_0x3fa483=>{const _0x5f2c0e=_0x5244d5;(_0x3fa483['keyCode']===0x7b||_0x3fa483['ctrlKey']&&_0x3fa483['shiftKey']&&_0x3fa483[_0x5f2c0e(0x184)]===0x49||_0x3fa483[_0x5f2c0e(0x1eb)]&&_0x3fa483[_0x5f2c0e(0x1fe)]&&_0x3fa483[_0x5f2c0e(0x184)]===0x49)&&_0x3fa483[_0x5f2c0e(0x216)]();}),(function(){const _0x56416a=_0x5244d5,_0x87cb64={'zh-TW':{'title':_0x56416a(0x213),'langBtn':'English','online':'線上安全節點：{0}','connecting':_0x56416a(0x1b3),'synced':'✅\x20安全驗證通過，已同步全網算式！','sliderPrompt':_0x56416a(0x21f),'sliderVerified':_0x56416a(0x1d5),'placeholder':_0x56416a(0x179),'btnStep':_0x56416a(0x1c9),'btnAuto':'🚀\x20啟動極速狂飆','btnStop':_0x56416a(0x17b),'btnAfk':_0x56416a(0x1d9),'afkTitle':'💤\x20鐵壁掛機模式運行中...','afkHint':_0x56416a(0x180),'stopped':_0x56416a(0x196),'uploading':_0x56416a(0x1d4),'success':_0x56416a(0x16b),'stepLog':_0x56416a(0x21a),'record':'👑\x20突破百萬極限！','compressHeader':_0x56416a(0x192),'hyperSync':_0x56416a(0x1f6),'hyperMiddle':_0x56416a(0x175),'hackerAlert':_0x56416a(0x18e)},'en':{'title':_0x56416a(0x18a),'langBtn':_0x56416a(0x1ec),'online':_0x56416a(0x1d8),'connecting':_0x56416a(0x20b),'synced':_0x56416a(0x1fa),'sliderPrompt':_0x56416a(0x1a5),'sliderVerified':_0x56416a(0x19e),'placeholder':_0x56416a(0x1ff),'btnStep':_0x56416a(0x17c),'btnAuto':'🚀\x20Start\x20Hyper\x20Engine','btnStop':_0x56416a(0x210),'btnAfk':_0x56416a(0x1e7),'afkTitle':'💤\x20Secure\x20AFK\x20Active...','afkHint':_0x56416a(0x17e),'stopped':_0x56416a(0x1a9),'uploading':_0x56416a(0x185),'success':_0x56416a(0x20f),'stepLog':'[Step\x20{0}]\x202\x20×\x20{0}\x20=\x20{1}','record':'👑\x201M\x20Limit\x20Broken!','compressHeader':_0x56416a(0x200),'hyperSync':_0x56416a(0x1af),'hyperMiddle':_0x56416a(0x21e),'hackerAlert':_0x56416a(0x1c8)}};let _0x3830f4=_0x56416a(0x1b4);function _0x182b9a(_0x42141c,..._0x53b142){let _0x130b42=_0x87cb64[_0x3830f4][_0x42141c];return _0x53b142['forEach']((_0x4622c4,_0x32f9dd)=>{const _0x4bc8b8=_0x5f3c;_0x130b42=_0x130b42[_0x4bc8b8(0x16c)]('{'+_0x32f9dd+'}')['join'](_0x4622c4);}),_0x130b42;}function _0xf0d9ce(){const _0x1e2e7a=_0x56416a;document[_0x1e2e7a(0x18c)]=_0x182b9a('title'),document[_0x1e2e7a(0x1e6)](_0x1e2e7a(0x1c5))[_0x1e2e7a(0x1fc)]=_0x182b9a(_0x1e2e7a(0x18c)),document[_0x1e2e7a(0x1e6)](_0x1e2e7a(0x1fd))[_0x1e2e7a(0x1fc)]=_0x182b9a('langBtn');if(!_0x21c700)document[_0x1e2e7a(0x1e6)](_0x1e2e7a(0x21d))['textContent']=_0x182b9a(_0x1e2e7a(0x178));else document['getElementById'](_0x1e2e7a(0x21d))['textContent']=_0x182b9a('sliderVerified');if(document['getElementById'](_0x1e2e7a(0x182)))document[_0x1e2e7a(0x1e6)](_0x1e2e7a(0x182))[_0x1e2e7a(0x1fc)]=_0x182b9a(_0x1e2e7a(0x182));document[_0x1e2e7a(0x1e6)](_0x1e2e7a(0x169))[_0x1e2e7a(0x1fc)]=_0x182b9a(_0x1e2e7a(0x169)),document[_0x1e2e7a(0x1e6)](_0x1e2e7a(0x1f7))[_0x1e2e7a(0x1fc)]=_0x182b9a(_0x1e2e7a(0x1f7)),document[_0x1e2e7a(0x1e6)](_0x1e2e7a(0x1b6))['textContent']=_0x182b9a('btnStop'),document['getElementById'](_0x1e2e7a(0x1ef))['textContent']=_0x182b9a(_0x1e2e7a(0x1ef)),document[_0x1e2e7a(0x1e6)](_0x1e2e7a(0x1ad))[_0x1e2e7a(0x1fc)]=_0x182b9a('afkTitle'),document[_0x1e2e7a(0x1e6)](_0x1e2e7a(0x177))[_0x1e2e7a(0x1fc)]=_0x182b9a(_0x1e2e7a(0x177));const _0x57c82b=typeof _0x26bf25!==_0x1e2e7a(0x1cd)?_0x26bf25:0x1;document['getElementById']('onlineCount')[_0x1e2e7a(0x1fc)]=_0x182b9a('online',_0x57c82b);}document['getElementById'](_0x56416a(0x1fd))[_0x56416a(0x205)](_0x56416a(0x1d7),()=>{const _0x1adc41=_0x56416a;_0x3830f4=_0x3830f4===_0x1adc41(0x1b4)?'en':_0x1adc41(0x1b4),_0xf0d9ce();});function _0x5c3646(_0x24506a){const _0x5a1b8d=_0x56416a,_0x3e60cc=document['getElementById'](_0x5a1b8d(0x1db));if(_0x3e60cc)_0x3e60cc[_0x5a1b8d(0x1b0)]='系統日誌：'+_0x24506a;console['log'](_0x24506a);}const _0x2a98ae={'apiKey':_0x56416a(0x1be),'authDomain':'binary-limit-breaker.firebaseapp.com','databaseURL':'https://binary-limit-breaker-default-rtdb.firebaseio.com','projectId':'binary-limit-breaker','storageBucket':'binary-limit-breaker.firebasestorage.app','messagingSenderId':_0x56416a(0x1f3),'appId':_0x56416a(0x19a)};try{if(!firebase[_0x56416a(0x217)][_0x56416a(0x1e5)])firebase[_0x56416a(0x201)](_0x2a98ae);}catch(_0x201fc6){_0x5c3646(_0x56416a(0x18d)+_0x201fc6['message']);}const _0x2cff34=firebase[_0x56416a(0x1bb)](),_0xe0136=firebase['auth'](),_0x41691b=_0x2cff34[_0x56416a(0x18f)](_0x56416a(0x1f0)),_0x4c2b9a=_0x2cff34[_0x56416a(0x18f)](_0x56416a(0x214)),_0x5192dc=document['getElementById'](_0x56416a(0x20a)),_0x7b33d1=document['getElementById'](_0x56416a(0x1f9)),_0x1a9a9b=document[_0x56416a(0x1e6)](_0x56416a(0x1b2)),_0x423e4d=document[_0x56416a(0x1e6)]('onlineCount'),_0x5c92b4=document['getElementById'](_0x56416a(0x1f8)),_0x3d400e=document[_0x56416a(0x1e6)](_0x56416a(0x1b1)),_0x5241aa=document[_0x56416a(0x1e6)]('archiveArea'),_0x1d803a=document['getElementById'](_0x56416a(0x169)),_0x25f53a=document[_0x56416a(0x1e6)](_0x56416a(0x1f7)),_0x26cfd5=document[_0x56416a(0x1e6)](_0x56416a(0x1b6)),_0x2e484c=document[_0x56416a(0x1e6)](_0x56416a(0x1ef)),_0x4f3005=document[_0x56416a(0x1e6)](_0x56416a(0x1b9));let _0x3458e5=0x0,_0x16ca93=0x0,_0x1f87f5=![],_0x54c01f=![],_0x138d2a=[],_0x26bf25=0x1,_0x3a9353=null;const _0x5b85e1=0x19,_0x456e13=0xc8,_0x47d2fc=0x222e0;_0xe0136[_0x56416a(0x1d1)]()[_0x56416a(0x20e)](_0x16f8cc=>{const _0x51bad4=_0x56416a;_0x5c3646(_0x51bad4(0x170)+_0x16f8cc[_0x51bad4(0x1c3)][_0x51bad4(0x1e1)][_0x51bad4(0x1dd)](0x0,0x6)+_0x51bad4(0x219)),_0x1a9a9b[_0x51bad4(0x1fc)]=_0x182b9a(_0x51bad4(0x220));})['catch'](_0x482184=>{const _0x23238c=_0x56416a;_0x5c3646('❌\x20安全認證失敗:\x20'+_0x482184[_0x23238c(0x1a4)]),_0x1a9a9b[_0x23238c(0x1fc)]=_0x23238c(0x1cf);});const _0x48cdcd=_0x56416a(0x1de),_0x2601a4=new Blob([_0x48cdcd],{'type':_0x56416a(0x1b7)}),_0x15beb9=new Worker(URL[_0x56416a(0x1e2)](_0x2601a4));_0x15beb9['onmessage']=function(_0x50437b){_0x50437b['data']['type']==='tick'&&_0x1f87f5&&(_0x16ca93+=_0x50437b['data']['count']);};async function _0x1dfc41(){const _0x482fcc=_0x56416a;try{_0x482fcc(0x1b5)in navigator&&(_0x3a9353=await navigator[_0x482fcc(0x1b5)][_0x482fcc(0x1cb)](_0x482fcc(0x1a1)));}catch(_0x13121a){console[_0x482fcc(0x1d0)](_0x482fcc(0x1a3),_0x13121a);}}function _0xb7aeb9(){const _0x2badcb=_0x56416a;_0x3a9353!==null&&_0x3a9353[_0x2badcb(0x1e4)]()[_0x2badcb(0x20e)](()=>{_0x3a9353=null;});}const _0x2addd1=document[_0x56416a(0x1e6)](_0x56416a(0x1bd)),_0x3f4b25=document[_0x56416a(0x1e6)](_0x56416a(0x20d)),_0x8c618e=document[_0x56416a(0x1e6)]('sliderFill'),_0x38c983=document[_0x56416a(0x1e6)](_0x56416a(0x21d));let _0x2fa64f=![],_0x21c700=![],_0x3180fc=0x0;function _0x3ea61d(_0x3d8297){const _0x1059ef=_0x56416a;if(_0x21c700)return;_0x2fa64f=!![],_0x3180fc=_0x3d8297[_0x1059ef(0x1c1)][_0x1059ef(0x19b)](_0x1059ef(0x1cc))?_0x3d8297[_0x1059ef(0x1a2)][0x0][_0x1059ef(0x1ba)]:_0x3d8297[_0x1059ef(0x1ba)];}function _0x4171ec(_0x2ad5eb){const _0x1c43fd=_0x56416a;if(!_0x2fa64f||_0x21c700)return;if(_0x2ad5eb[_0x1c43fd(0x208)])_0x2ad5eb['preventDefault']();const _0x4bd63f=_0x2ad5eb[_0x1c43fd(0x1c1)][_0x1c43fd(0x19b)]('touch')?_0x2ad5eb['touches'][0x0][_0x1c43fd(0x1ba)]:_0x2ad5eb[_0x1c43fd(0x1ba)],_0xb7744e=_0x2addd1[_0x1c43fd(0x173)]-_0x3f4b25[_0x1c43fd(0x173)]-0x4;let _0x477566=_0x4bd63f-_0x3180fc;if(_0x477566<0x0)_0x477566=0x0;if(_0x477566>_0xb7744e)_0x477566=_0xb7744e;_0x3f4b25[_0x1c43fd(0x1da)][_0x1c43fd(0x16e)]=_0x477566+0x2+'px',_0x8c618e['style'][_0x1c43fd(0x1a6)]=_0x477566+_0x3f4b25[_0x1c43fd(0x173)]/0x2+'px';if(_0x477566>=_0xb7744e-0x4){_0x21c700=!![],_0x2fa64f=![],_0x3f4b25[_0x1c43fd(0x1da)][_0x1c43fd(0x16e)]='',_0x8c618e[_0x1c43fd(0x1da)][_0x1c43fd(0x1a6)]=_0x1c43fd(0x168),_0x2addd1['classList'][_0x1c43fd(0x1ab)](_0x1c43fd(0x215)),_0x3f4b25[_0x1c43fd(0x1b0)]='✔',_0x3f4b25['style'][_0x1c43fd(0x1f4)]=_0x1c43fd(0x1c7),_0x38c983['textContent']=_0x182b9a(_0x1c43fd(0x191)),_0x1d803a['disabled']=![],_0x25f53a[_0x1c43fd(0x195)]=![],_0x2e484c[_0x1c43fd(0x195)]=![];if(typeof confetti===_0x1c43fd(0x1d3))confetti({'particleCount':0x3c,'spread':0x3c,'origin':{'y':0.7}});}}function _0x571a78(){const _0x20b2f2=_0x56416a;if(!_0x2fa64f||_0x21c700)return;_0x2fa64f=![],_0x3f4b25[_0x20b2f2(0x1da)]['transition']=_0x20b2f2(0x1a8),_0x8c618e['style']['transition']='width\x200.25s\x20ease',_0x3f4b25[_0x20b2f2(0x1da)][_0x20b2f2(0x16e)]=_0x20b2f2(0x1ed),_0x8c618e[_0x20b2f2(0x1da)]['width']=_0x20b2f2(0x1b8),setTimeout(()=>{const _0x1b9d05=_0x20b2f2;_0x3f4b25[_0x1b9d05(0x1da)][_0x1b9d05(0x17d)]='',_0x8c618e[_0x1b9d05(0x1da)][_0x1b9d05(0x17d)]='';},0xfa);}_0x3f4b25[_0x56416a(0x205)](_0x56416a(0x17a),_0x3ea61d),window[_0x56416a(0x205)](_0x56416a(0x190),_0x4171ec),window[_0x56416a(0x205)](_0x56416a(0x1a0),_0x571a78),_0x3f4b25[_0x56416a(0x205)]('touchstart',_0x3ea61d,{'passive':!![]}),window[_0x56416a(0x205)](_0x56416a(0x1c6),_0x4171ec,{'passive':![]}),window['addEventListener'](_0x56416a(0x1dc),_0x571a78);const _0x40a101=_0x4c2b9a[_0x56416a(0x1ca)]();_0x2cff34[_0x56416a(0x18f)]('.info/connected')['on']('value',_0x1222f1=>{const _0x58b997=_0x56416a;_0x1222f1[_0x58b997(0x1c4)]()===!![]&&(_0x5c3646(_0x58b997(0x1ee)),_0x40a101['onDisconnect']()[_0x58b997(0x1e8)](),_0x40a101[_0x58b997(0x199)](!![]));}),_0x4c2b9a['on'](_0x56416a(0x1bc),_0x2f8714=>{const _0x1e309d=_0x56416a;_0x26bf25=_0x2f8714[_0x1e309d(0x1d2)]()||0x1,_0x423e4d['textContent']=_0x182b9a('online',_0x26bf25);});function _0x8238c4(_0x52a153){const _0x4430f2=_0x56416a;return _0x182b9a(_0x4430f2(0x209),_0x52a153['toLocaleString'](),(_0x52a153*0x2)[_0x4430f2(0x21c)]());}function _0x271dd7(_0x52ba44){const _0x3f7bb8=_0x56416a,_0x57d8c0=_0x52ba44*0x2,_0xb996ff=document[_0x3f7bb8(0x1f5)]('div');_0xb996ff['className']=_0x3f7bb8(0x1ac);if(_0x57d8c0>=0xf4240){_0xb996ff[_0x3f7bb8(0x204)]+=_0x3f7bb8(0x1c2),_0xb996ff[_0x3f7bb8(0x1b0)]=_0x3f7bb8(0x1e0)+_0x8238c4(_0x52ba44)+_0x3f7bb8(0x1f2)+_0x182b9a(_0x3f7bb8(0x19d))+_0x3f7bb8(0x203);if(!_0x54c01f){if(typeof confetti===_0x3f7bb8(0x1d3))confetti({'particleCount':0x96,'spread':0x5a});_0x54c01f=!![];}}else _0xb996ff['innerHTML']=_0x3f7bb8(0x1e0)+_0x8238c4(_0x52ba44)+'</span>';return _0xb996ff;}function _0x572e0b(){const _0x2a8b11=_0x56416a;while(_0x3d400e['children']['length']>_0x5b85e1){const _0x25103f=_0x3d400e[_0x2a8b11(0x1aa)];if(_0x25103f[_0x2a8b11(0x218)]&&_0x25103f[_0x2a8b11(0x218)][_0x2a8b11(0x1ea)])_0x138d2a[_0x2a8b11(0x1ca)](Number(_0x25103f[_0x2a8b11(0x218)][_0x2a8b11(0x1ea)]));_0x3d400e[_0x2a8b11(0x176)](_0x25103f);if(_0x138d2a[_0x2a8b11(0x1e5)]>=_0x456e13){const _0x46e2ff=document['createElement'](_0x2a8b11(0x1ae)),_0x43307c=document[_0x2a8b11(0x1f5)](_0x2a8b11(0x171)),_0x4fb820=document['createElement']('div');_0x4fb820[_0x2a8b11(0x204)]='compressed-content';const _0x30aa31=_0x138d2a[0x0],_0x20083e=_0x138d2a[_0x138d2a['length']-0x1];_0x43307c['textContent']=_0x182b9a(_0x2a8b11(0x189),_0x30aa31[_0x2a8b11(0x21c)](),_0x20083e[_0x2a8b11(0x21c)](),_0x138d2a[_0x2a8b11(0x1e5)]),_0x4fb820[_0x2a8b11(0x1b0)]=_0x138d2a[_0x2a8b11(0x1ce)](_0x295c9e=>_0x8238c4(_0x295c9e))['join'](_0x2a8b11(0x186)),_0x46e2ff[_0x2a8b11(0x16a)](_0x43307c),_0x46e2ff['appendChild'](_0x4fb820),_0x5241aa['appendChild'](_0x46e2ff),_0x138d2a=[];}}}function _0x2e051b(_0x4e9c74,_0x5af1da){const _0x5c1cc4=_0x56416a,_0x32eb6d=document[_0x5c1cc4(0x1e6)]('placeholder');if(_0x32eb6d)_0x32eb6d[_0x5c1cc4(0x1e8)]();if(_0x5af1da-_0x4e9c74>0x1e){const _0x1e89f5=document[_0x5c1cc4(0x1f5)](_0x5c1cc4(0x1ae)),_0x4f24e8=document[_0x5c1cc4(0x1f5)](_0x5c1cc4(0x171)),_0x5c4689=document[_0x5c1cc4(0x1f5)](_0x5c1cc4(0x194));_0x5c4689[_0x5c1cc4(0x204)]=_0x5c1cc4(0x1fb),_0x4f24e8[_0x5c1cc4(0x1fc)]=_0x182b9a('hyperSync',_0x4e9c74[_0x5c1cc4(0x21c)](),_0x5af1da[_0x5c1cc4(0x21c)]()),_0x5c4689['innerHTML']=_0x8238c4(_0x4e9c74)+_0x5c1cc4(0x186)+_0x182b9a(_0x5c1cc4(0x197))+_0x5c1cc4(0x186)+_0x8238c4(_0x5af1da),_0x1e89f5['appendChild'](_0x4f24e8),_0x1e89f5[_0x5c1cc4(0x16a)](_0x5c4689),_0x5241aa['appendChild'](_0x1e89f5);for(let _0x767dec=Math['max'](_0x4e9c74,_0x5af1da-0xa);_0x767dec<=_0x5af1da;_0x767dec++){const _0x3abcc4=_0x271dd7(_0x767dec);_0x3abcc4['dataset'][_0x5c1cc4(0x1ea)]=_0x767dec,_0x3d400e['appendChild'](_0x3abcc4);}}else for(let _0x174bf5=_0x4e9c74;_0x174bf5<=_0x5af1da;_0x174bf5++){const _0x3ff0e9=_0x271dd7(_0x174bf5);_0x3ff0e9[_0x5c1cc4(0x218)][_0x5c1cc4(0x1ea)]=_0x174bf5,_0x3d400e[_0x5c1cc4(0x16a)](_0x3ff0e9);}_0x572e0b(),_0x5c92b4[_0x5c1cc4(0x20c)]=_0x5c92b4['scrollHeight'];}_0x41691b['on'](_0x56416a(0x1bc),_0x88ba96=>{const _0x563863=_0x56416a,_0x230004=_0x88ba96[_0x563863(0x1c4)]()||0x0,_0x5b4c33=(_0x230004*0x2)[_0x563863(0x21c)]();_0x5192dc[_0x563863(0x1fc)]=_0x5b4c33,_0x7b33d1[_0x563863(0x1fc)]=_0x5b4c33,_0x230004>_0x3458e5&&(_0x2e051b(_0x3458e5===0x0?Math[_0x563863(0x211)](0x1,_0x230004-0x5):_0x3458e5+0x1,_0x230004),_0x3458e5=_0x230004),(_0x1a9a9b['textContent']===_0x87cb64[_0x563863(0x1b4)][_0x563863(0x1e3)]||_0x1a9a9b['textContent']===_0x87cb64['en'][_0x563863(0x1e3)])&&(_0x1a9a9b[_0x563863(0x1fc)]=_0x182b9a(_0x563863(0x220)));});function _0x361f97(){const _0x1ea321=_0x56416a;if(_0x16ca93>0x0){let _0x13c95d=Math[_0x1ea321(0x172)](_0x16ca93,_0x47d2fc);_0x16ca93-=_0x13c95d,_0x1a9a9b[_0x1ea321(0x1fc)]=_0x182b9a('uploading',_0x13c95d[_0x1ea321(0x21c)]()),_0x41691b[_0x1ea321(0x188)](_0x57e2e6=>(_0x57e2e6||0x0)+_0x13c95d,(_0xdac782,_0x3373a9)=>{const _0x103cae=_0x1ea321;_0x3373a9?_0x1a9a9b['textContent']=_0x182b9a('success',(_0x13c95d*0x2)['toLocaleString']()):(_0x5c3646(_0x103cae(0x1c0)),_0x16ca93+=_0x13c95d);});}}setInterval(_0x361f97,0x1f4);function _0x49b9c9(){const _0x2ab03c=_0x56416a;if(!_0x21c700){alert(_0x182b9a('hackerAlert'));return;}if(_0x1f87f5)return;_0x1f87f5=!![],_0x15beb9[_0x2ab03c(0x202)]('start'),_0x1d803a[_0x2ab03c(0x1da)]['display']=_0x2ab03c(0x1f1),_0x25f53a[_0x2ab03c(0x1da)][_0x2ab03c(0x1d6)]=_0x2ab03c(0x1f1),_0x26cfd5[_0x2ab03c(0x1da)][_0x2ab03c(0x1d6)]='',_0x2e484c[_0x2ab03c(0x1da)][_0x2ab03c(0x19c)]=_0x2ab03c(0x1df);}function _0x106d25(){const _0x25ab70=_0x56416a;_0x1f87f5=![],_0x15beb9[_0x25ab70(0x202)](_0x25ab70(0x181)),_0x16ca93=0x0,_0x1d803a[_0x25ab70(0x1da)][_0x25ab70(0x1d6)]='',_0x25f53a[_0x25ab70(0x1da)][_0x25ab70(0x1d6)]='',_0x26cfd5[_0x25ab70(0x1da)][_0x25ab70(0x1d6)]=_0x25ab70(0x1f1),_0x2e484c['style']['gridColumn']=_0x25ab70(0x207),_0x1a9a9b['textContent']=_0x182b9a(_0x25ab70(0x193)),_0xb7aeb9();}_0x1d803a[_0x56416a(0x205)](_0x56416a(0x1d7),_0xfbf2=>{const _0xca615f=_0x56416a;_0xfbf2[_0xca615f(0x206)]();if(!_0x21c700){alert(_0x182b9a(_0xca615f(0x17f)));return;}_0x16ca93+=0x64;}),_0x25f53a[_0x56416a(0x205)](_0x56416a(0x1d7),_0x1fb337=>{const _0x3b6061=_0x56416a;_0x1fb337[_0x3b6061(0x206)](),_0x49b9c9();}),_0x26cfd5[_0x56416a(0x205)]('click',_0x4c7f14=>{const _0x2ef413=_0x56416a;_0x4c7f14[_0x2ef413(0x206)](),_0x106d25();}),_0x2e484c[_0x56416a(0x205)]('click',_0x335d49=>{const _0xcb5d11=_0x56416a;_0x335d49['stopPropagation']();if(!_0x21c700){alert(_0x182b9a('hackerAlert'));return;}_0x49b9c9(),_0x1dfc41(),_0x4f3005[_0xcb5d11(0x1da)]['display']=_0xcb5d11(0x1e9);}),_0x4f3005[_0x56416a(0x205)](_0x56416a(0x1d7),()=>{const _0x7a1e70=_0x56416a;_0x4f3005[_0x7a1e70(0x1da)]['display']=_0x7a1e70(0x1f1),_0x106d25();}),_0xf0d9ce();}()));
   </script>
 </body>
 </html>

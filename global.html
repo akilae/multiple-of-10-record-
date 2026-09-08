@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>⚡ 2x 全網二進制極速引擎 (會員專屬版)</title>
+  <title>⚡ 2x 全網二進制極速引擎 (雙重登入版)</title>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; user-select: none; }
@@ -29,12 +29,21 @@
     /* 登入區塊樣式 */
     .auth-panel { background: #111827; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px; text-align: left; }
     .auth-title { font-size: 14px; font-weight: bold; color: #f1f5f9; margin-bottom: 12px; }
-    .auth-input { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #334155; background: #020617; color: #fff; font-family: inherit; outline: none; }
+    .auth-input { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #334155; background: #020617; color: #fff; font-family: inherit; outline: none; transition: 0.2s; }
     .auth-input:focus { border-color: #38bdf8; }
     .auth-btn-group { display: flex; gap: 8px; margin-top: 4px; }
-    .auth-error { color: #ef4444; font-size: 12px; margin-top: 8px; min-height: 14px; }
+    .auth-error { color: #ef4444; font-size: 12px; margin-top: 8px; min-height: 14px; text-align: center; }
     .user-info { font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 8px; }
     .btn-logout { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0; }
+    
+    .divider { display: flex; align-items: center; text-align: center; margin: 16px 0; color: #64748b; font-size: 12px; }
+    .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #334155; }
+    .divider:not(:empty)::before { margin-right: .5em; }
+    .divider:not(:empty)::after { margin-left: .5em; }
+
+    .btn-google { width: 100%; background: #ffffff; color: #1f2937; padding: 10px; font-size: 13px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+    .btn-google:active { background: #e5e7eb; }
+    .btn-google img { width: 18px; height: 18px; }
 
     .log-window { background: #020617; border: 1px solid #0f172a; border-radius: 8px; height: 240px; overflow-y: auto; padding: 12px; font-size: 13px; line-height: 1.6; text-align: left; margin-bottom: 16px; }
     details { background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; margin-bottom: 6px; padding: 4px 8px; color: #94a3b8; }
@@ -43,7 +52,7 @@
     .log-line { display: flex; justify-content: space-between; color: #94a3b8; }
     .log-line.active { color: #38bdf8; }
     .log-line.record-break { color: #f59e0b; font-weight: bold; background: rgba(245, 158, 11, 0.1); }
-    .slider-captcha-container { margin-bottom: 16px; display: none; /* 預設隱藏，登入後顯示 */ }
+    .slider-captcha-container { margin-bottom: 16px; display: none; }
     .slider-track { position: relative; width: 100%; height: 48px; background: #111827; border: 1px solid #334155; border-radius: 24px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding-left: 44px; padding-right: 16px; }
     .slider-track-text { color: #94a3b8; font-size: 13px; font-weight: bold; pointer-events: none; transition: opacity 0.2s; text-align: center; width: 100%; }
     .slider-fill { position: absolute; left: 0; top: 0; height: 100%; width: 0; background: rgba(16, 185, 129, 0.25); pointer-events: none; }
@@ -53,7 +62,7 @@
     .slider-track.verified .slider-track-text { color: #34d399; }
     .slider-track.verified .slider-handle { left: auto !important; right: 2px !important; }
     
-    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; display: none; /* 預設隱藏 */ }
+    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; display: none; }
     button.ctrl-btn { padding: 12px; font-size: 14px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; font-family: inherit; }
     button.ctrl-btn:disabled { background: #1e293b !important; color: #64748b !important; cursor: not-allowed; opacity: 0.6; }
     button.ctrl-btn:active:not(:disabled) { transform: scale(0.95); }
@@ -96,15 +105,22 @@
     <div class="global-number" id="displayGlobal">...</div>
     <div class="status-text" id="statusTxt">請先登入或註冊帳號</div>
 
-    <!-- 登入/註冊區塊 -->
+    <!-- 雙重登入區塊 -->
     <div class="auth-panel" id="authPanel">
       <div class="auth-title">🔐 驗證節點存取權限</div>
       <input type="email" id="emailInput" class="auth-input" placeholder="請輸入 E-mail">
       <input type="password" id="passwordInput" class="auth-input" placeholder="請輸入密碼 (至少 6 碼)">
       <div class="auth-btn-group">
-        <button id="btnLogin" class="ctrl-btn btn-step" style="flex: 1; padding: 8px;">登入引擎</button>
+        <button id="btnLogin" class="ctrl-btn btn-step" style="flex: 1; padding: 8px;">登入</button>
         <button id="btnSignup" class="ctrl-btn btn-auto" style="flex: 1; padding: 8px;">註冊新帳號</button>
       </div>
+      
+      <div class="divider">或</div>
+      
+      <button id="btnGoogle" class="btn-google">
+        <img src="https://www.google.com/favicon.ico" alt="Google"> 使用 Google 帳號一鍵登入
+      </button>
+
       <div id="authError" class="auth-error"></div>
     </div>
 
@@ -161,6 +177,7 @@
 
       const db = firebase.database();
       const auth = firebase.auth();
+      const googleProvider = new firebase.auth.GoogleAuthProvider();
       const counterRef = db.ref('global_2x_steps');
       const onlineUsersRef = db.ref('online_users');
 
@@ -186,6 +203,13 @@
         authError.textContent = '註冊中...';
         auth.createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
           .catch(error => authError.textContent = "註冊失敗: " + error.message);
+      });
+
+      // 🌟 Google 一鍵登入邏輯
+      document.getElementById('btnGoogle').addEventListener('click', () => {
+        authError.textContent = 'Google 授權中...';
+        auth.signInWithPopup(googleProvider)
+          .catch(error => authError.textContent = "Google 登入失敗: " + error.message);
       });
 
       document.getElementById('btnLogout').addEventListener('click', () => {

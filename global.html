@@ -1,475 +1,294 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>⚡ 2x 全網二進制極速引擎 (終極完整版)</title>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <style>
-    * { box-sizing: border-box; user-select: none; }
-    body {
-      font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
-      background-color: #030712; color: #38bdf8;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 100vh; margin: 0; 
-      padding: 16px 16px calc(16px + env(safe-area-inset-bottom)) 16px;
-    }
-    .panel { background: #0b0f19; border: 1px solid #1e293b; border-radius: 14px; padding: 24px; width: 100%; max-width: 680px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7); }
-    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
-    .title { font-size: clamp(14px, 4vw, 16px); font-weight: bold; color: #f1f5f9; text-align: left; }
-    .header-right { display: flex; gap: 10px; align-items: center; }
-    .online-badge { display: flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-    .online-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
-    .global-number { font-size: clamp(32px, 10vw, 50px); font-weight: bold; color: #f59e0b; margin: 12px 0; text-shadow: 0 0 20px rgba(245, 158, 11, 0.4); letter-spacing: -1px; word-break: break-all; line-height: 1.1; }
-    .status-text { color: #10b981; font-size: 13px; margin-bottom: 12px; min-height: 18px; }
-    
-    .auth-panel { background: #111827; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px; text-align: left; }
-    .auth-title { font-size: 14px; font-weight: bold; color: #f1f5f9; margin-bottom: 12px; }
-    .auth-input { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #334155; background: #020617; color: #fff; font-family: inherit; outline: none; }
-    .auth-input:focus { border-color: #38bdf8; }
-    .auth-btn-group { display: flex; gap: 8px; margin-top: 4px; }
-    .auth-error { color: #ef4444; font-size: 12px; margin-top: 8px; min-height: 14px; text-align: center; }
-    .user-info { font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 8px; }
-    .btn-logout { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0; }
-    
-    .verify-banner { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: 8px; padding: 12px; margin-bottom: 16px; color: #fca5a5; font-size: 12px; text-align: center; display: none; }
-    .verify-action-btn { background: none; border: none; color: #38bdf8; cursor: pointer; text-decoration: underline; font-family: inherit; font-size: 12px; font-weight: bold; padding: 0 4px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>⚡ 2x 全網二進制極速引擎</title>
 
-    .divider { display: flex; align-items: center; text-align: center; margin: 16px 0; color: #64748b; font-size: 12px; }
-    .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #334155; }
-    .divider:not(:empty)::before { margin-right: .5em; }
-    .divider:not(:empty)::after { margin-left: .5em; }
+<!-- Firebase v8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    .btn-google { width: 100%; background: #ffffff; color: #1f2937; padding: 10px; font-size: 13px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-google:active { background: #e5e7eb; }
-    .btn-google img { width: 18px; height: 18px; }
-
-    .log-window { background: #020617; border: 1px solid #0f172a; border-radius: 8px; height: 240px; overflow-y: auto; padding: 12px; font-size: 13px; line-height: 1.6; text-align: left; margin-bottom: 16px; }
-    details { background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 6px; margin-bottom: 6px; padding: 4px 8px; color: #94a3b8; }
-    summary { cursor: pointer; font-weight: bold; color: #f59e0b; user-select: none; }
-    .compressed-content { margin-top: 6px; padding-left: 10px; border-left: 2px solid #f59e0b; font-size: 12px; color: #64748b; max-height: 120px; overflow-y: auto; }
-    .log-line { display: flex; justify-content: space-between; color: #94a3b8; }
-    .log-line.active { color: #38bdf8; }
-    .log-line.record-break { color: #f59e0b; font-weight: bold; background: rgba(245, 158, 11, 0.1); }
-    .slider-captcha-container { margin-bottom: 16px; display: none; }
-    .slider-track { position: relative; width: 100%; height: 48px; background: #111827; border: 1px solid #334155; border-radius: 24px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding-left: 44px; padding-right: 16px; }
-    .slider-track-text { color: #94a3b8; font-size: 13px; font-weight: bold; pointer-events: none; transition: opacity 0.2s; text-align: center; width: 100%; }
-    .slider-fill { position: absolute; left: 0; top: 0; height: 100%; width: 0; background: rgba(16, 185, 129, 0.25); pointer-events: none; }
-    .slider-handle { position: absolute; left: 2px; top: 2px; width: 44px; height: 44px; background: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 18px; font-weight: bold; cursor: grab; box-shadow: 0 2px 6px rgba(0,0,0,0.5); touch-action: none; }
-    .slider-handle:active { cursor: grabbing; background: #0369a1; }
-    .slider-track.verified { background: rgba(16, 185, 129, 0.15); border-color: #10b981; padding-left: 0; }
-    .slider-track.verified .slider-track-text { color: #34d399; }
-    .slider-track.verified .slider-handle { left: auto !important; right: 2px !important; }
-    
-    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; display: none; }
-    button.ctrl-btn { padding: 12px; font-size: 14px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; font-family: inherit; }
-    button.ctrl-btn:disabled { background: #1e293b !important; color: #64748b !important; cursor: not-allowed; opacity: 0.6; }
-    button.ctrl-btn:active:not(:disabled) { transform: scale(0.95); }
-    .btn-step { background: #2563eb; color: #fff; }
-    .btn-auto { background: #059669; color: #fff; }
-    .btn-afk { background: #8b5cf6; color: #fff; grid-column: span 2; }
-    .btn-stop { background: #dc2626; color: #fff; }
-    .debug-box { margin-top: 14px; padding: 8px; background: #020617; border: 1px solid #1e293b; border-radius: 6px; font-size: 11px; color: #64748b; text-align: left; }
-    
-    #afkOverlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.98); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: #10b981; cursor: pointer; }
-    .afk-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; animation: pulse 2s infinite; color: #34d399; }
-    .afk-number { font-size: clamp(36px, 10vw, 56px); color: #f59e0b; font-weight: bold; letter-spacing: -1px; text-shadow: 0 0 30px rgba(245, 158, 11, 0.5); word-break: break-all; text-align: center; padding: 0 20px; }
-    .afk-hint { margin-top: 30px; font-size: 13px; color: #64748b; }
-  </style>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  background: radial-gradient(circle at top, #0f172a, #020617 65%);
+  color: #38bdf8;
+  font-family: "SF Mono", Monaco, Consolas, monospace;
+}
+.container { width: 100%; max-width: 720px; margin: auto; }
+.panel {
+  background: rgba(7, 13, 25, .96);
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #1e293b;
+}
+.title { color: #f8fafc; font-weight: 800; font-size: 17px; }
+.online {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid #10b981;
+  border-radius: 999px;
+  color: #34d399;
+  background: rgba(16,185,129,.1);
+  font-size: 12px;
+  font-weight: bold;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse 1.3s infinite;
+}
+@keyframes pulse { 50% { opacity: .35; } }
+.global-label { margin-top: 10px; color: #94a3b8; font-size: 11px; letter-spacing: 2px; }
+.global-number {
+  margin: 10px 0;
+  color: #f59e0b;
+  font-size: clamp(35px, 11vw, 58px);
+  font-weight: 900;
+  line-height: 1.05;
+  word-break: break-all;
+  text-shadow: 0 0 25px rgba(245,158,11,.3);
+}
+.status { min-height: 20px; margin-bottom: 16px; color: #34d399; font-size: 13px; }
+.auth {
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #111827;
+}
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 9px;
+  border: 1px solid #334155;
+  border-radius: 7px;
+  outline: none;
+  background: #020617;
+  color: white;
+  font-family: inherit;
+  font-size: 14px;
+}
+input:focus { border-color: #38bdf8; }
+.auth-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+button { font-family: inherit; }
+.btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.btn:disabled { opacity: .45; cursor: default; }
+.blue { background: #2563eb; color: white; }
+.green { background: #059669; color: white; }
+.red { background: #dc2626; color: white; }
+.purple { background: #7c3aed; color: white; }
+.google { width: 100%; margin-top: 10px; background: white; color: #111827; }
+.auth-error { min-height: 16px; margin-top: 10px; color: #f87171; font-size: 12px; }
+.user-box {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  margin-bottom: 12px;
+  border-radius: 7px;
+  background: #020617;
+  color: #94a3b8;
+  font-size: 11px;
+}
+.logout { border: none; background: none; color: #f87171; cursor: pointer; text-decoration: underline; }
+.verify {
+  display: none;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(239,68,68,.12);
+  border: 1px solid #ef4444;
+  border-radius: 9px;
+  color: #fca5a5;
+  font-size: 12px;
+}
+.verify button { border: none; background: none; color: #38bdf8; text-decoration: underline; cursor: pointer; }
+.slider-container { display: none; margin: 16px 0; }
+.slider {
+  position: relative;
+  height: 52px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  border-radius: 26px;
+  background: #111827;
+  touch-action: none;
+}
+.slider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 100%;
+  background: rgba(16,185,129,.25);
+}
+.slider-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+}
+.slider-handle {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #0284c7;
+  color: white;
+  font-size: 19px;
+  font-weight: bold;
+  cursor: grab;
+  z-index: 3;
+}
+.slider.done { border-color: #10b981; }
+.slider.done .slider-text { color: #34d399; }
+.log {
+  height: 230px;
+  overflow-y: auto;
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid #172033;
+  border-radius: 9px;
+  background: #020617;
+  text-align: left;
+  color: #38bdf8;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.controls { display: none; grid-template-columns: 1fr 1fr; gap: 8px; }
+.full { grid-column: 1 / -1; }
+.info {
+  margin-top: 15px;
+  padding: 8px;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  color: #64748b;
+  background: #020617;
+  font-size: 10px;
+  text-align: left;
+}
+#afk {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  cursor: pointer;
+}
+.afk-title { color: #34d399; font-size: 20px; font-weight: bold; }
+.afk-number {
+  margin: 22px;
+  color: #f59e0b;
+  font-size: clamp(40px, 12vw, 65px);
+  font-weight: bold;
+}
+.afk-small { color: #64748b; font-size: 12px; }
+</style>
 </head>
+
 <body>
 
-  <div id="afkOverlay">
-    <div class="afk-title" id="afkTitle">💤 鐵壁掛機模式運行中...</div>
-    <div class="afk-number" id="afkGlobal">...</div>
-    <div class="afk-hint">（點擊畫面任意處瞬間喚醒停止）</div>
+<div id="afk">
+  <div class="afk-title">💤 掛機模式運行中</div>
+  <div id="afkNumber" class="afk-number">0</div>
+  <div class="afk-small">點擊畫面停止</div>
+</div>
+
+<div class="container">
+<div class="panel">
+
+<div class="header">
+  <div class="title">⚡ 2x 全網二進制極速引擎</div>
+  <div class="online">
+    <div class="dot"></div>
+    <span id="online">在線節點: 0</span>
   </div>
+</div>
 
-  <div class="panel">
-    <div class="header-bar">
-      <div class="title">⚡ 2x 極速引擎</div>
-      <div class="header-right">
-        <div class="online-badge"><div class="online-dot"></div><span id="onlineCount">檢查中...</span></div>
-      </div>
-    </div>
-    
-    <div class="user-info" id="userInfo" style="display: none;">
-      <span id="userEmailTxt"></span>
-      <button class="btn-logout" id="btnLogout">登出帳號</button>
-    </div>
+<div id="userBox" class="user-box">
+  <span id="userEmail"></span>
+  <button id="logout" class="logout">登出</button>
+</div>
 
-    <div class="global-number" id="displayGlobal">...</div>
-    <div class="status-text" id="statusTxt">請先登入帳號</div>
+<div class="global-label">GLOBAL 2X OUTPUT</div>
+<div id="global" class="global-number">0</div>
+<div id="status" class="status">請先登入帳號</div>
 
-    <div class="verify-banner" id="verifyBanner">
-      ⚠️ 帳號尚未驗證信箱！請檢查收件匣點擊驗證連結。<br><br>
-      <button class="verify-action-btn" id="btnResendEmail">重新發送驗證信</button> | 
-      <button class="verify-action-btn" id="btnReloadVerify" style="color: #34d399;">我已完成驗證</button>
-    </div>
+<div id="verify" class="verify">
+  ⚠️ 尚未完成 Email 驗證<br><br>
+  <button id="resend">重新寄驗證信</button> | <button id="reload">我已完成驗證</button>
+</div>
 
-    <div class="auth-panel" id="authPanel">
-      <div class="auth-title">🔐 節點權限驗證</div>
-      <input type="email" id="emailInput" class="auth-input" placeholder="請輸入 E-mail">
-      <input type="password" id="passwordInput" class="auth-input" placeholder="請輸入密碼 (至少 6 碼)">
-      <div class="auth-btn-group">
-        <button id="btnLogin" class="ctrl-btn btn-step" style="flex: 1; padding: 8px;">登入</button>
-        <button id="btnSignup" class="ctrl-btn btn-auto" style="flex: 1; padding: 8px;">註冊新帳號</button>
-      </div>
-      
-      <div class="divider">或</div>
-      
-      <button id="btnGoogle" class="btn-google">
-        <img src="https://www.google.com/favicon.ico" alt="Google"> 使用 Google 帳號一鍵登入
-      </button>
-
-      <div id="authError" class="auth-error"></div>
-    </div>
-
-    <div class="slider-captcha-container" id="captchaContainer">
-      <div class="slider-track" id="sliderTrack">
-        <div class="slider-fill" id="sliderFill"></div>
-        <div class="slider-track-text" id="sliderText">➔ 向右滑動解鎖引擎</div>
-        <div class="slider-handle" id="sliderHandle">⚡</div>
-      </div>
-    </div>
-
-    <div class="log-window" id="logWindow">
-      <div id="archiveArea"></div>
-      <div id="liveArea"><div style="color: #64748b;" id="placeholder">// 安全連線建立後將即時同步全網算式...</div></div>
-    </div>
-
-    <div class="controls" id="engineControls">
-      <button class="ctrl-btn btn-step" id="btnStep" disabled>手動貢獻 +200</button>
-      <button class="ctrl-btn btn-auto" id="btnAuto" disabled>🚀 啟動極速狂飆</button>
-      <button class="ctrl-btn btn-stop" id="btnStop" style="display: none;">🛑 停止狂飆</button>
-      <button class="ctrl-btn btn-afk" id="btnAfk" disabled>💤 掛機省電模式</button>
-    </div>
-
-    <div class="debug-box" id="debugLog">系統日誌：初始化中...</div>
+<div id="auth" class="auth">
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="密碼">
+  <div class="auth-buttons">
+    <button id="login" class="btn blue">登入</button>
+    <button id="signup" class="btn green">註冊</button>
   </div>
+  <button id="google" class="btn google">Google 帳號登入</button>
+  <div id="authError" class="auth-error"></div>
+</div>
 
-  <script>
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    document.addEventListener('keydown', event => {
-      if (event.keyCode === 123 || (event.ctrlKey && event.shiftKey && event.keyCode === 73) || (event.metaKey && event.altKey && event.keyCode === 73)) {
-        event.preventDefault();
-      }
-    });
+<div id="sliderContainer" class="slider-container">
+  <div id="slider" class="slider">
+    <div id="sliderFill" class="slider-fill"></div>
+    <div id="sliderText" class="slider-text">➜ 向右滑動解鎖引擎</div>
+    <div id="sliderHandle" class="slider-handle">⚡</div>
+  </div>
+</div>
 
-    (function() {
-      function logMsg(msg) {
-        const dbg = document.getElementById('debugLog');
-        if (dbg) dbg.innerHTML = `系統日誌：${msg}`;
-      }
-const firebaseConfig = {
-  apiKey: "AIzaSyCxDuuIwrtR8JGvgbEIMnjQm8zwZvhyL7s",
-  authDomain: "binary-limit-breaker.firebaseapp.com",
-  databaseURL: "https://binary-limit-breaker-default-rtdb.firebaseio.com",
-  projectId: "binary-limit-breaker",
-  storageBucket: "binary-limit-breaker.firebasestorage.app",
-  messagingSenderId: "278424467808",
-  appId: "1:278424467808:web:fceb3ddc3817f5d4230605"
-};
+<div id="log" class="log">// 等待全網資料...</div>
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+<div id="controls" class="controls">
+  <button id="manual" class="btn blue" disabled>⚡ 手動 +200</button>
+  <button id="start" class="btn green" disabled>🚀 啟動極速引擎</button>
+  <button id="stop" class="btn red" style="display:none">🛑 停止</button>
+  <button id="afkButton" class="btn purple full" disabled>💤 掛機省電模式</button>
+</div>
 
-      try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); } 
-      catch (e) { logMsg("❌ 初始化失敗: " + e.message); }
+<div id="info" class="info">SYSTEM READY</div>
 
-      const db = firebase.database();
-      const auth = firebase.auth();
-      const googleProvider = new firebase.auth.GoogleAuthProvider();
-      const counterRef = db.ref('global_2x_steps');
-      const onlineUsersRef = db.ref('online_users');
+</div>
+</div>
 
-      const authPanel = document.getElementById('authPanel');
-      const emailInput = document.getElementById('emailInput');
-      const passwordInput = document.getElementById('passwordInput');
-      const authError = document.getElementById('authError');
-      const userInfo = document.getElementById('userInfo');
-      const userEmailTxt = document.getElementById('userEmailTxt');
-      const verifyBanner = document.getElementById('verifyBanner');
-      const captchaContainer = document.getElementById('captchaContainer');
-      const engineControls = document.getElementById('engineControls');
-      const statusTxt = document.getElementById('statusTxt');
-
-      document.getElementById('btnLogin').addEventListener('click', () => {
-        authError.textContent = '登入中...';
-        auth.signInWithEmailAndPassword(emailInput.value, passwordInput.value)
-          .catch(error => authError.textContent = "登入失敗: " + error.message);
-      });
-
-      document.getElementById('btnSignup').addEventListener('click', () => {
-        authError.textContent = '註冊中...';
-        auth.createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
-          .then((cred) => {
-            cred.user.sendEmailVerification();
-            alert("註冊成功！驗證信已寄至您的信箱，請點擊信中連結完成啟用。");
-          })
-          .catch(error => authError.textContent = "註冊失敗: " + error.message);
-      });
-
-      document.getElementById('btnGoogle').addEventListener('click', () => {
-        authError.textContent = 'Google 授權中...';
-        auth.signInWithPopup(googleProvider)
-          .catch(error => authError.textContent = "Google 登入失敗: " + error.message);
-      });
-
-      document.getElementById('btnLogout').addEventListener('click', () => {
-        stopEngine();
-        auth.signOut();
-      });
-
-      document.getElementById('btnResendEmail').addEventListener('click', () => {
-        if (auth.currentUser) {
-          auth.currentUser.sendEmailVerification()
-            .then(() => alert("驗證信已重新發送！請至收件匣確認。"))
-            .catch(err => alert("發送失敗：" + err.message));
-        }
-      });
-
-      document.getElementById('btnReloadVerify').addEventListener('click', () => {
-        if (auth.currentUser) {
-          auth.currentUser.reload().then(() => {
-            if (auth.currentUser.emailVerified) {
-              location.reload();
-            } else {
-              alert("尚未完成驗證！請確認您已在信箱中點擊確認連結。");
-            }
-          });
-        }
-      });
-
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          userInfo.style.display = 'flex';
-          authPanel.style.display = 'none';
-
-          if (!user.emailVerified) {
-            logMsg("⚠️ 帳號尚未驗證信箱：" + user.email);
-            userEmailTxt.textContent = "👤 " + user.email + " (未驗證)";
-            verifyBanner.style.display = 'block';
-            captchaContainer.style.display = 'none';
-            engineControls.style.display = 'none';
-            statusTxt.textContent = '⚠️ 請先完成信箱驗證以解鎖算力引擎';
-            return;
-          }
-
-          logMsg("🔓 驗證通過：" + user.email);
-          userEmailTxt.textContent = "👤 " + user.email;
-          verifyBanner.style.display = 'none';
-          captchaContainer.style.display = 'block';
-          engineControls.style.display = 'grid';
-          statusTxt.textContent = '✅ 帳號驗證通過，請解鎖引擎';
-        } else {
-          logMsg("🔒 等待使用者登入");
-          authPanel.style.display = 'block';
-          userInfo.style.display = 'none';
-          verifyBanner.style.display = 'none';
-          captchaContainer.style.display = 'none';
-          engineControls.style.display = 'none';
-          statusTxt.textContent = '請先登入帳號';
-          
-          isVerified = false;
-          btnStep.disabled = true; btnAuto.disabled = true; btnAfk.disabled = true;
-          handle.style.left = '2px'; fill.style.width = '0px';
-          track.classList.remove('verified'); handle.innerHTML = '⚡'; handle.style.background = '#0284c7';
-          sliderText.textContent = '➔ 向右滑動解鎖引擎';
-        }
-      });
-
-      const displayGlobal = document.getElementById('displayGlobal');
-      const afkGlobal = document.getElementById('afkGlobal');
-      const onlineCount = document.getElementById('onlineCount');
-      const logWindow = document.getElementById('logWindow');
-      const liveArea = document.getElementById('liveArea');
-      const archiveArea = document.getElementById('archiveArea');
-      const btnStep = document.getElementById('btnStep');
-      const btnAuto = document.getElementById('btnAuto');
-      const btnStop = document.getElementById('btnStop');
-      const btnAfk = document.getElementById('btnAfk');
-      const afkOverlay = document.getElementById('afkOverlay');
-
-      let currentKnownSteps = 0, localPendingSteps = 0, isRunning = false, hasPlayedAudio = false;
-      let pendingArchive = [], wakeLock = null;
-      const MAX_LIVE_ROWS = 25, COMPACT_BLOCK_SIZE = 200, MAX_SAFE_UPLOAD = 140000; 
-
-      const workerBlobCode = `
-        let timer = null; let lastTick = 0;
-        self.onmessage = function(e) {
-          if (e.data === 'start') {
-            if (timer) return;
-            lastTick = Date.now();
-            timer = setInterval(() => {
-              const now = Date.now(); const elapsed = now - lastTick;
-              const ticks = Math.max(1, Math.floor(elapsed / 4));
-              lastTick = now - (elapsed % 4);
-              self.postMessage({ type: 'tick', count: 500 * ticks });
-            }, 4);
-          } else if (e.data === 'stop') {
-            if (timer) { clearInterval(timer); timer = null; }
-          }
-        };
-      `;
-      const computeWorker = new Worker(URL.createObjectURL(new Blob([workerBlobCode], { type: 'application/javascript' })));
-
-      computeWorker.onmessage = function(e) {
-        if (e.data.type === 'tick' && isRunning) { localPendingSteps += e.data.count; }
-      };
-
-      async function enableWakeLock() {
-        try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } 
-        catch (err) {}
-      }
-      function disableWakeLock() {
-        if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
-      }
-
-      const track = document.getElementById('sliderTrack'), handle = document.getElementById('sliderHandle');
-      const fill = document.getElementById('sliderFill'), sliderText = document.getElementById('sliderText');
-      let isDragging = false, isVerified = false, startX = 0;
-
-      function handleStart(e) {
-        if (isVerified) return; isDragging = true;
-        startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-      }
-      function handleMove(e) {
-        if (!isDragging || isVerified) return;
-        if (e.cancelable) e.preventDefault(); 
-        const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const maxDistance = track.clientWidth - handle.clientWidth - 4;
-        let moveDistance = Math.min(Math.max(0, currentX - startX), maxDistance);
-
-        handle.style.left = `${moveDistance + 2}px`; fill.style.width = `${moveDistance + handle.clientWidth / 2}px`;
-        if (moveDistance >= maxDistance - 4) {
-          isVerified = true; isDragging = false;
-          handle.style.left = ''; fill.style.width = '100%';
-          track.classList.add('verified'); handle.innerHTML = '✔'; handle.style.background = '#10b981';
-          sliderText.textContent = '🛡️ 驗證通過，引擎已解鎖';
-          btnStep.disabled = false; btnAuto.disabled = false; btnAfk.disabled = false;
-          if (typeof confetti === 'function') confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
-        }
-      }
-      function handleEnd() {
-        if (!isDragging || isVerified) return; isDragging = false;
-        handle.style.transition = 'left 0.25s ease'; fill.style.transition = 'width 0.25s ease';
-        handle.style.left = '2px'; fill.style.width = '0px';
-        setTimeout(() => { handle.style.transition = ''; fill.style.transition = ''; }, 250);
-      }
-
-      handle.addEventListener('mousedown', handleStart); window.addEventListener('mousemove', handleMove); window.addEventListener('mouseup', handleEnd);
-      handle.addEventListener('touchstart', handleStart, { passive: true }); window.addEventListener('touchmove', handleMove, { passive: false }); window.addEventListener('touchend', handleEnd);
-
-      const myPresenceRef = onlineUsersRef.push();
-      db.ref(".info/connected").on("value", (snap) => {
-        if (snap.val() === true) {
-          myPresenceRef.onDisconnect().remove(); myPresenceRef.set(true);
-        }
-      });
-      onlineUsersRef.on("value", (snap) => {
-        onlineCount.textContent = `在線節點: ${snap.numChildren() || 1}`;
-      });
-
-      function formatLineText(s) { return `[第 ${s.toLocaleString()} 步] 2 × ${s.toLocaleString()} = ${(s*2).toLocaleString()}`; }
-      function createLogElement(s) {
-        const res = s * 2, row = document.createElement('div'); row.className = 'log-line active';
-        if (res >= 1000000) {
-          row.className += ' record-break';
-          row.innerHTML = `<span>${formatLineText(s)}</span> <span>👑 突破極限！</span>`;
-          if (!hasPlayedAudio) { if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 90 }); hasPlayedAudio = true; }
-        } else { row.innerHTML = `<span>${formatLineText(s)}</span>`; }
-        return row;
-      }
-
-      function compressLogs() {
-        while (liveArea.children.length > MAX_LIVE_ROWS) {
-          const oldestNode = liveArea.firstElementChild;
-          if (oldestNode.dataset && oldestNode.dataset.step) pendingArchive.push(Number(oldestNode.dataset.step));
-          liveArea.removeChild(oldestNode);
-          if (pendingArchive.length >= COMPACT_BLOCK_SIZE) {
-            const details = document.createElement('details'), summary = document.createElement('summary'), content = document.createElement('div');
-            content.className = 'compressed-content';
-            summary.textContent = `📁 已壓縮紀錄：第 ${pendingArchive[0].toLocaleString()} 步 ~ ${pendingArchive[pendingArchive.length - 1].toLocaleString()} 步`;
-            content.innerHTML = pendingArchive.map(s => formatLineText(s)).join('<br>');
-            details.appendChild(summary); details.appendChild(content); archiveArea.appendChild(details);
-            pendingArchive = [];
-          }
-        }
-      }
-
-      function appendStepsToLog(fromStep, toStep) {
-        const ph = document.getElementById('placeholder'); if (ph) ph.remove();
-        if (toStep - fromStep > 30) {
-          const details = document.createElement('details'), summary = document.createElement('summary'), content = document.createElement('div');
-          content.className = 'compressed-content';
-          summary.textContent = `⚡ 全網極速狂飆：第 ${fromStep.toLocaleString()} 步 ~ ${toStep.toLocaleString()} 步`;
-          content.innerHTML = `${formatLineText(fromStep)}<br>... 期間全網連線高速完成 ...<br>${formatLineText(toStep)}`;
-          details.appendChild(summary); details.appendChild(content); archiveArea.appendChild(details);
-          for (let s = Math.max(fromStep, toStep - 10); s <= toStep; s++) {
-            const row = createLogElement(s); row.dataset.step = s; liveArea.appendChild(row);
-          }
-        } else {
-          for (let s = fromStep; s <= toStep; s++) {
-            const row = createLogElement(s); row.dataset.step = s; liveArea.appendChild(row);
-          }
-        }
-        compressLogs(); logWindow.scrollTop = logWindow.scrollHeight;
-      }
-
-      counterRef.on('value', (snapshot) => {
-        const globalSteps = snapshot.val() || 0;
-        const formattedNum = (globalSteps * 2).toLocaleString();
-        displayGlobal.textContent = formattedNum; afkGlobal.textContent = formattedNum;
-        if (globalSteps > currentKnownSteps) {
-          appendStepsToLog(currentKnownSteps === 0 ? Math.max(1, globalSteps - 5) : currentKnownSteps + 1, globalSteps);
-          currentKnownSteps = globalSteps;
-        }
-      });
-
-      function syncToCloud() {
-        if (localPendingSteps > 0 && auth.currentUser && auth.currentUser.emailVerified) {
-          let stepsToUpload = Math.min(localPendingSteps, MAX_SAFE_UPLOAD);
-          localPendingSteps -= stepsToUpload; 
-          statusTxt.textContent = `⚡ 正在安全上傳 ${stepsToUpload.toLocaleString()} 步算式...`;
-          counterRef.transaction((curr) => (curr || 0) + stepsToUpload, (error, committed) => {
-            if (committed) { statusTxt.textContent = `🔥 成功為全網貢獻了 ${(stepsToUpload * 2).toLocaleString()}！`; } 
-            else { logMsg("❌ 上傳被拒絕"); localPendingSteps += stepsToUpload; }
-          });
-        }
-      }
-      setInterval(syncToCloud, 500);
-
-      function startEngine() {
-        if (!isVerified || !auth.currentUser || !auth.currentUser.emailVerified) return;
-        if (isRunning) return; isRunning = true;
-        computeWorker.postMessage('start');
-        btnStep.style.display = 'none'; btnAuto.style.display = 'none'; 
-        btnStop.style.display = ''; btnAfk.style.gridColumn = 'span 1';
-      }
-
-      function stopEngine() {
-        isRunning = false; computeWorker.postMessage('stop');
-        localPendingSteps = 0; 
-        btnStep.style.display = ''; btnAuto.style.display = ''; 
-        btnStop.style.display = 'none'; btnAfk.style.gridColumn = 'span 2';
-        statusTxt.textContent = '🛑 引擎已停止'; disableWakeLock();
-      }
-
-      btnStep.addEventListener('click', (e) => { e.stopPropagation(); if (isVerified) localPendingSteps += 100; });
-      btnAuto.addEventListener('click', (e) => { e.stopPropagation(); startEngine(); });
-      btnStop.addEventListener('click', (e) => { e.stopPropagation(); stopEngine(); });
-      btnAfk.addEventListener('click', (e) => {
-        e.stopPropagation(); if (!isVerified) return;
-        startEngine(); enableWakeLock(); afkOverlay.style.display = 'flex';
-      });
-      afkOverlay.addEventListener('click', () => { afkOverlay.style.display = 'none'; stopEngine(); });
-    })();
-  </script>
+<script>
+'use strict';const _0x44a2aa=_0x151a;(function(_0xb469e9,_0x5009b7){const _0x450b59=_0x151a,_0x12ac4e=_0xb469e9();while(!![]){try{const _0x24dcbb=-parseInt(_0x450b59(0x129))/0x1+parseInt(_0x450b59(0xd8))/0x2+parseInt(_0x450b59(0x105))/0x3+-parseInt(_0x450b59(0xaf))/0x4*(parseInt(_0x450b59(0xda))/0x5)+parseInt(_0x450b59(0xe7))/0x6*(parseInt(_0x450b59(0x11e))/0x7)+-parseInt(_0x450b59(0xae))/0x8+-parseInt(_0x450b59(0xbf))/0x9*(-parseInt(_0x450b59(0xdc))/0xa);if(_0x24dcbb===_0x5009b7)break;else _0x12ac4e['push'](_0x12ac4e['shift']());}catch(_0x18f7d2){_0x12ac4e['push'](_0x12ac4e['shift']());}}}(_0x538f,0x4ed3a));const firebaseConfig={'apiKey':'AIzaSyCxDuuIwrtR8JGvgbEIMnjQm8zwZvhyL7s','authDomain':'binary-limit-breaker.firebaseapp.com','databaseURL':_0x44a2aa(0x114),'projectId':_0x44a2aa(0xfb),'storageBucket':_0x44a2aa(0xd6),'messagingSenderId':_0x44a2aa(0x108),'appId':_0x44a2aa(0xc0)};!firebase[_0x44a2aa(0xf3)][_0x44a2aa(0xe2)]&&firebase[_0x44a2aa(0xd4)](firebaseConfig);const auth=firebase['auth'](),db=firebase[_0x44a2aa(0xb4)](),globalRef=db[_0x44a2aa(0xe6)](_0x44a2aa(0xd5)),onlineRef=db['ref'](_0x44a2aa(0xd3)),$=_0x9a0c97=>document['getElementById'](_0x9a0c97);function status(_0x59573d){$('status')['textContent']=_0x59573d;}function info(_0x289eb4){const _0x3d1c03=_0x44a2aa;$(_0x3d1c03(0xbe))['textContent']=_0x3d1c03(0x103)+_0x289eb4;}auth['getRedirectResult']()[_0x44a2aa(0xa1)](_0x351462=>{const _0x4aa7df=_0x44a2aa;_0x351462&&_0x351462[_0x4aa7df(0xb1)]&&status(_0x4aa7df(0xb2));})[_0x44a2aa(0x11c)](_0x52a973=>{const _0x234f37=_0x44a2aa;$('authError')['textContent']=_0x52a973[_0x234f37(0xba)];});let unlocked=![],running=![],wakeLock=null,presenceRef=null,localPending=0x0,syncing=![],syncTimer=null,engineTimer=null;function _0x151a(_0x1de4df,_0x44ecf6){_0x1de4df=_0x1de4df-0xa1;const _0x538fa4=_0x538f();let _0x151aae=_0x538fa4[_0x1de4df];return _0x151aae;}const STEPS_PER_SECOND=0x1e848,MAX_UPLOAD=0x222e0,SYNC_INTERVAL=0x1f4,slider=$(_0x44a2aa(0xe1)),sliderHandle=$('sliderHandle'),sliderFill=$(_0x44a2aa(0xe3));let dragging=![],sliderStartX=0x0;function resetSlider(){const _0x2edfb3=_0x44a2aa;unlocked=![],slider[_0x2edfb3(0xc7)][_0x2edfb3(0xdb)]('done'),sliderHandle[_0x2edfb3(0x100)][_0x2edfb3(0xb7)]='3px',sliderHandle['textContent']='⚡',sliderFill['style'][_0x2edfb3(0xff)]='0',$(_0x2edfb3(0xca))[_0x2edfb3(0xab)]=_0x2edfb3(0xec),$(_0x2edfb3(0x110))['disabled']=!![],$('start')['disabled']=!![],$('afkButton')[_0x2edfb3(0x127)]=!![];}function unlock(){const _0x2003ae=_0x44a2aa;unlocked=!![],dragging=![],slider['classList'][_0x2003ae(0xd2)](_0x2003ae(0xf9));const _0x1a97e7=slider['clientWidth']-sliderHandle['clientWidth']-0x6;sliderHandle[_0x2003ae(0x100)][_0x2003ae(0xb7)]=_0x1a97e7+0x3+'px',sliderFill[_0x2003ae(0x100)][_0x2003ae(0xff)]='100%',sliderHandle[_0x2003ae(0xab)]='✔',$(_0x2003ae(0xca))[_0x2003ae(0xab)]=_0x2003ae(0xf2),$('manual')[_0x2003ae(0x127)]=![],$(_0x2003ae(0xa6))['disabled']=![],$('afkButton')[_0x2003ae(0x127)]=![],status(_0x2003ae(0xd0));if(!syncTimer)syncTimer=setInterval(syncCloud,SYNC_INTERVAL);}sliderHandle[_0x44a2aa(0xfd)](_0x44a2aa(0xfc),_0x37b5b9=>{const _0x122cdb=_0x44a2aa;if(unlocked)return;dragging=!![],sliderStartX=_0x37b5b9[_0x122cdb(0xb0)];try{sliderHandle[_0x122cdb(0x123)](_0x37b5b9['pointerId']);}catch(_0xdfd8f3){}}),sliderHandle[_0x44a2aa(0xfd)]('pointermove',_0xa4689b=>{const _0x36890d=_0x44a2aa;if(!dragging||unlocked)return;const _0x55e6eb=slider['clientWidth']-sliderHandle[_0x36890d(0x126)]-0x6;let _0x3ca7f7=_0xa4689b['clientX']-sliderStartX;_0x3ca7f7=Math[_0x36890d(0xe0)](0x0,Math[_0x36890d(0xb6)](_0x3ca7f7,_0x55e6eb)),sliderHandle['style'][_0x36890d(0xb7)]=_0x3ca7f7+0x3+'px',sliderFill[_0x36890d(0x100)][_0x36890d(0xff)]=_0x3ca7f7+0x19+'px';if(_0x3ca7f7>=_0x55e6eb-0x4)unlock();}),sliderHandle[_0x44a2aa(0xfd)](_0x44a2aa(0x120),()=>{const _0x3fc59e=_0x44a2aa;if(unlocked)return;dragging=![],sliderHandle[_0x3fc59e(0x100)][_0x3fc59e(0xb7)]='3px',sliderFill[_0x3fc59e(0x100)][_0x3fc59e(0xff)]='0';});function startEngine(){const _0x2ae688=_0x44a2aa,_0x18b2e0=auth['currentUser'];if(running||!unlocked||!_0x18b2e0||!_0x18b2e0[_0x2ae688(0x10f)])return;running=!![],$(_0x2ae688(0x110))['style'][_0x2ae688(0xf0)]='none',$(_0x2ae688(0xa6))[_0x2ae688(0x100)]['display']=_0x2ae688(0xa5),$('stop')[_0x2ae688(0x100)]['display']='',status('🚀\x20極速引擎運行中');let _0x56da74=performance[_0x2ae688(0xc4)]();engineTimer=setInterval(()=>{const _0x233224=_0x2ae688;if(!running)return;const _0x4f5abc=performance[_0x233224(0xc4)](),_0x283250=Math[_0x233224(0xe0)](0x0,_0x4f5abc-_0x56da74);_0x56da74=_0x4f5abc;const _0x319633=Math[_0x233224(0xb6)](_0x283250,0x3e8),_0x292ff0=Math[_0x233224(0xc2)](STEPS_PER_SECOND*_0x319633/0x3e8);localPending+=_0x292ff0;},0x64);}async function stopEngine(){const _0x52f7e3=_0x44a2aa;if(!running){await disableWakeLock();return;}running=![],clearInterval(engineTimer),engineTimer=null,status(_0x52f7e3(0xde)),await syncCloud(),$('manual')[_0x52f7e3(0x100)][_0x52f7e3(0xf0)]='',$(_0x52f7e3(0xa6))[_0x52f7e3(0x100)][_0x52f7e3(0xf0)]='',$('stop')[_0x52f7e3(0x100)]['display']=_0x52f7e3(0xa5),status('🛑\x20引擎已停止'),await disableWakeLock();}async function syncCloud(){const _0x3b1a06=_0x44a2aa;if(syncing)return;const _0xebe56e=auth[_0x3b1a06(0x122)];if(!_0xebe56e||!_0xebe56e[_0x3b1a06(0x10f)]||localPending<=0x0)return;syncing=!![];const _0x32a031=Math['min'](Math[_0x3b1a06(0xc2)](localPending),MAX_UPLOAD);localPending-=_0x32a031;try{await db['ref'](_0x3b1a06(0xa3)+_0xebe56e[_0x3b1a06(0x121)])[_0x3b1a06(0x113)](firebase[_0x3b1a06(0xb4)][_0x3b1a06(0xf4)][_0x3b1a06(0x102)]);const _0x34f4f8=await globalRef[_0x3b1a06(0xe4)](_0x3b3749=>{const _0x49c75a=_0x3b1a06,_0x85f607=Number(_0x3b3749),_0x436287=Number[_0x49c75a(0x115)](_0x85f607)?_0x85f607:0x0;if(_0x436287>Number['MAX_SAFE_INTEGER']-_0x32a031)return;return _0x436287+_0x32a031;});!_0x34f4f8[_0x3b1a06(0xcb)]&&(localPending+=_0x32a031,info('同步未完成'));}catch(_0x5270e2){localPending+=_0x32a031,info(_0x3b1a06(0x124));}finally{syncing=![];}}$(_0x44a2aa(0x110))['addEventListener'](_0x44a2aa(0xb9),()=>{const _0x849448=_0x44a2aa;if(!unlocked||running)return;localPending+=0x64,status(_0x849448(0xa4));}),$(_0x44a2aa(0xa6))[_0x44a2aa(0xfd)](_0x44a2aa(0xb9),startEngine),$(_0x44a2aa(0xd1))['addEventListener'](_0x44a2aa(0xb9),stopEngine);let previousSteps=null;globalRef['on'](_0x44a2aa(0xcd),_0x17325b=>{const _0x57dcbd=_0x44a2aa,_0x18e708=Number(_0x17325b[_0x57dcbd(0xb3)]()),_0x10aed8=Number[_0x57dcbd(0x115)](_0x18e708)&&_0x18e708>=0x0?_0x18e708:0x0,_0x1d220e=_0x10aed8*0x2;$('global')['textContent']=_0x1d220e[_0x57dcbd(0xbd)](),$(_0x57dcbd(0xf7))[_0x57dcbd(0xab)]=_0x1d220e['toLocaleString'](),previousSteps!==null&&_0x10aed8>previousSteps&&addLog('⚡\x20全網\x20+'+((_0x10aed8-previousSteps)*0x2)[_0x57dcbd(0xbd)]()+'\x20→\x20'+_0x1d220e['toLocaleString']()),previousSteps=_0x10aed8;},_0x55a274=>{const _0x3eb8ab=_0x44a2aa;info(_0x3eb8ab(0xea)+_0x55a274['message']);});function addLog(_0x3b7bde){const _0x383a9c=_0x44a2aa,_0x1c0a2e=$('log');if(_0x1c0a2e[_0x383a9c(0xab)][_0x383a9c(0x11a)](_0x383a9c(0xe9)))_0x1c0a2e[_0x383a9c(0xab)]='';const _0x39f60d=document[_0x383a9c(0xf8)](_0x383a9c(0xc3)),_0x8c297d=new Date()[_0x383a9c(0x104)]('zh-TW');_0x39f60d[_0x383a9c(0xab)]='['+_0x8c297d+']\x20'+_0x3b7bde,_0x1c0a2e['appendChild'](_0x39f60d);while(_0x1c0a2e[_0x383a9c(0xa7)][_0x383a9c(0xe2)]>0x32)_0x1c0a2e['removeChild'](_0x1c0a2e[_0x383a9c(0xdd)]);_0x1c0a2e[_0x383a9c(0xfa)]=_0x1c0a2e['scrollHeight'];}const sessionId=window[_0x44a2aa(0xbb)]&&crypto[_0x44a2aa(0x10c)]?crypto[_0x44a2aa(0x10c)]():(Date['now']()+'_'+Math[_0x44a2aa(0x10e)]())[_0x44a2aa(0x116)]('.','_');function setupPresence(_0x48e7a3){const _0x363198=_0x44a2aa;if(!_0x48e7a3||!_0x48e7a3[_0x363198(0x10f)])return;presenceRef=onlineRef[_0x363198(0xb8)](_0x48e7a3[_0x363198(0x121)])[_0x363198(0xb8)](sessionId),db[_0x363198(0xe6)](_0x363198(0xf6))['on']('value',_0x179e52=>{const _0xad8850=_0x363198;if(_0x179e52[_0xad8850(0xb3)]()!==!![]||!auth[_0xad8850(0x122)]||!auth[_0xad8850(0x122)][_0xad8850(0x10f)])return;presenceRef[_0xad8850(0x109)]()['remove'](),presenceRef[_0xad8850(0x113)]({'online':!![],'connectedAt':firebase['database'][_0xad8850(0xf4)][_0xad8850(0x102)]});});}async function removePresence(){const _0x3e4943=_0x44a2aa;if(!presenceRef)return;try{await presenceRef[_0x3e4943(0xdb)]();}catch(_0xde501c){}presenceRef=null;}function _0x538f(){const _0x4f6c5a=['🔄\x20正在同步最後進度...','forEach','max','slider','length','sliderFill','transaction','👤\x20','ref','6utguje','signInWithPopup','等待全網資料','讀取失敗：','身份驗證完成','➜\x20向右滑動解鎖引擎','numChildren','grid','visible','display','在線節點:\x20','🛡️\x20驗證完成','apps','ServerValue','request','.info/connected','afkNumber','createElement','done','scrollTop','binary-limit-breaker','pointerdown','addEventListener','sendEmailVerification','width','style','online','TIMESTAMP','SYSTEM:\x20','toLocaleTimeString','770274CrktTO','reload','⚠️\x20請先完成\x20Email\x20驗證','278424467808','onDisconnect','sliderContainer','userEmail','randomUUID','verify','random','emailVerified','manual','請先登入帳號','wakeLock','set','https://binary-limit-breaker-default-rtdb.firebaseio.com','isSafeInteger','replace','release','Email\x20尚未驗證','✅\x20登入成功，請滑動解鎖','includes','visibilitychange','catch','email','3163363SbcGYQ','signOut','pointerup','uid','currentUser','setPointerCapture','同步冷卻中或受阻','maxTouchPoints','clientWidth','disabled','auth','206810QtDnAI','註冊成功！驗證信已寄出。','login','then','test','user_rate_limits/','⚡\x20手動貢獻\x20+200','none','start','children','signInWithRedirect','Firebase\x20初始化完成','signInWithEmailAndPassword','textContent','screen','authError','2127864noIzso','2081164MlhagH','clientX','user','✅\x20Google\x20登入成功','val','database','afk','min','left','child','click','message','crypto','password','toLocaleString','info','9dMtZjz','1:278424467808:web:fceb3ddc3817f5d4230605','block','floor','div','now','signup','等待登入','classList','trim','createUserWithEmailAndPassword','sliderText','committed','controls','value','GoogleAuthProvider','getIdToken','⚡\x20引擎已解鎖','stop','add','online_users','initializeApp','global_2x_steps','binary-limit-breaker.firebasestorage.app','flex','691392uHZKQF','visibilityState','5xhfjzE','remove','2615950kyfTuH','firstElementChild'];_0x538f=function(){return _0x4f6c5a;};return _0x538f();}onlineRef['on'](_0x44a2aa(0xcd),_0x331199=>{const _0x58c32c=_0x44a2aa;let _0x2fcbde=0x0;_0x331199[_0x58c32c(0xdf)](_0x390861=>{const _0x3e0f87=_0x58c32c;if(_0x390861[_0x3e0f87(0xed)]()>0x0)_0x2fcbde++;}),$(_0x58c32c(0x101))[_0x58c32c(0xab)]=_0x58c32c(0xf1)+_0x2fcbde;});async function enableWakeLock(){const _0xdc056d=_0x44a2aa;try{if(_0xdc056d(0x112)in navigator)wakeLock=await navigator[_0xdc056d(0x112)][_0xdc056d(0xf5)](_0xdc056d(0xac));}catch(_0xf73337){}}async function disableWakeLock(){const _0x530880=_0x44a2aa;try{if(wakeLock)await wakeLock[_0x530880(0x117)]();}catch(_0x283a6a){}wakeLock=null;}$('afkButton')['addEventListener'](_0x44a2aa(0xb9),async()=>{const _0x56dc50=_0x44a2aa;startEngine();if(!running)return;await enableWakeLock(),$('afk')[_0x56dc50(0x100)]['display']=_0x56dc50(0xd7);}),$('afk')[_0x44a2aa(0xfd)](_0x44a2aa(0xb9),async()=>{const _0x5bd8c6=_0x44a2aa;$(_0x5bd8c6(0xb5))['style'][_0x5bd8c6(0xf0)]='none',await stopEngine();}),document[_0x44a2aa(0xfd)](_0x44a2aa(0x11b),async()=>{const _0x287ce8=_0x44a2aa;document[_0x287ce8(0xd9)]===_0x287ce8(0xef)&&running&&$('afk')['style']['display']===_0x287ce8(0xd7)&&await enableWakeLock();}),$(_0x44a2aa(0x12b))[_0x44a2aa(0xfd)](_0x44a2aa(0xb9),async()=>{const _0x5c6efe=_0x44a2aa;$('authError')[_0x5c6efe(0xab)]='';try{await auth[_0x5c6efe(0xaa)]($(_0x5c6efe(0x11d))[_0x5c6efe(0xcd)][_0x5c6efe(0xc8)](),$(_0x5c6efe(0xbc))[_0x5c6efe(0xcd)]);}catch(_0x59f66c){$(_0x5c6efe(0xad))[_0x5c6efe(0xab)]=_0x59f66c['message'];}}),$(_0x44a2aa(0xc5))[_0x44a2aa(0xfd)](_0x44a2aa(0xb9),async()=>{const _0xffb8db=_0x44a2aa;$(_0xffb8db(0xad))[_0xffb8db(0xab)]='';try{const _0x203fd3=await auth[_0xffb8db(0xc9)]($(_0xffb8db(0x11d))[_0xffb8db(0xcd)][_0xffb8db(0xc8)](),$(_0xffb8db(0xbc))['value']);await _0x203fd3[_0xffb8db(0xb1)][_0xffb8db(0xfe)](),alert(_0xffb8db(0x12a));}catch(_0x44d5e3){$(_0xffb8db(0xad))[_0xffb8db(0xab)]=_0x44d5e3[_0xffb8db(0xba)];}}),$('google')['addEventListener'](_0x44a2aa(0xb9),async()=>{const _0x3af67b=_0x44a2aa,_0xde7e76=new firebase[(_0x3af67b(0x128))][(_0x3af67b(0xce))](),_0x16cedd=/iPad|iPhone|iPod/[_0x3af67b(0xa2)](navigator['userAgent'])||navigator['platform']==='MacIntel'&&navigator[_0x3af67b(0x125)]>0x1;try{_0x16cedd?await auth[_0x3af67b(0xa8)](_0xde7e76):await auth[_0x3af67b(0xe8)](_0xde7e76);}catch(_0x50940d){$(_0x3af67b(0xad))[_0x3af67b(0xab)]=_0x50940d[_0x3af67b(0xba)];}}),$('resend')[_0x44a2aa(0xfd)](_0x44a2aa(0xb9),async()=>{const _0x3f7e45=_0x44a2aa,_0x348930=auth[_0x3f7e45(0x122)];if(!_0x348930)return;try{await _0x348930[_0x3f7e45(0xfe)](),alert('驗證信已重新寄出。');}catch(_0x5c6986){alert(_0x5c6986[_0x3f7e45(0xba)]);}}),$(_0x44a2aa(0x106))[_0x44a2aa(0xfd)](_0x44a2aa(0xb9),async()=>{const _0xbbc06a=_0x44a2aa,_0x507fd6=auth[_0xbbc06a(0x122)];if(!_0x507fd6)return;try{await _0x507fd6[_0xbbc06a(0x106)](),auth[_0xbbc06a(0x122)][_0xbbc06a(0x10f)]?(await auth[_0xbbc06a(0x122)][_0xbbc06a(0xcf)](!![]),location[_0xbbc06a(0x106)]()):alert('目前仍未完成\x20Email\x20驗證。');}catch(_0x11b487){alert(_0x11b487[_0xbbc06a(0xba)]);}}),$('logout')['addEventListener']('click',async()=>{const _0x5e0e81=_0x44a2aa;await stopEngine(),syncTimer&&(clearInterval(syncTimer),syncTimer=null),await removePresence(),await auth[_0x5e0e81(0x11f)]();}),auth['onAuthStateChanged'](async _0x459d03=>{const _0x58cc83=_0x44a2aa;await removePresence();if(!_0x459d03){running=![],clearInterval(engineTimer);syncTimer&&(clearInterval(syncTimer),syncTimer=null);$(_0x58cc83(0x128))['style'][_0x58cc83(0xf0)]=_0x58cc83(0xc1),$('userBox')[_0x58cc83(0x100)][_0x58cc83(0xf0)]='none',$(_0x58cc83(0x10d))[_0x58cc83(0x100)]['display']=_0x58cc83(0xa5),$(_0x58cc83(0x10a))['style'][_0x58cc83(0xf0)]=_0x58cc83(0xa5),$(_0x58cc83(0xcc))[_0x58cc83(0x100)][_0x58cc83(0xf0)]=_0x58cc83(0xa5),resetSlider(),status(_0x58cc83(0x111)),info(_0x58cc83(0xc6));return;}$(_0x58cc83(0x128))['style'][_0x58cc83(0xf0)]=_0x58cc83(0xa5),$('userBox')[_0x58cc83(0x100)][_0x58cc83(0xf0)]=_0x58cc83(0xd7),$(_0x58cc83(0x10b))[_0x58cc83(0xab)]=_0x58cc83(0xe5)+(_0x459d03[_0x58cc83(0x11d)]||_0x459d03[_0x58cc83(0x121)]);if(!_0x459d03[_0x58cc83(0x10f)]){$(_0x58cc83(0x10d))[_0x58cc83(0x100)][_0x58cc83(0xf0)]=_0x58cc83(0xc1),$(_0x58cc83(0x10a))['style'][_0x58cc83(0xf0)]='none',$(_0x58cc83(0xcc))['style'][_0x58cc83(0xf0)]=_0x58cc83(0xa5),resetSlider(),status(_0x58cc83(0x107)),info(_0x58cc83(0x118));return;}await _0x459d03['getIdToken'](!![]),$(_0x58cc83(0x10d))['style'][_0x58cc83(0xf0)]=_0x58cc83(0xa5),$('sliderContainer')[_0x58cc83(0x100)][_0x58cc83(0xf0)]=_0x58cc83(0xc1),$(_0x58cc83(0xcc))[_0x58cc83(0x100)]['display']=_0x58cc83(0xee),resetSlider(),setupPresence(_0x459d03),status(_0x58cc83(0x119)),info(_0x58cc83(0xeb));}),info(_0x44a2aa(0xa9));
+</script>
 </body>
 </html>
-

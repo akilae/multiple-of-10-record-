@@ -166,15 +166,23 @@
         if (dbg) dbg.innerHTML = `系統日誌：${msg}`;
       }
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyCxDuuIwrRt8JGvgbEIMnjQm8zwZvhyL7s",
-        authDomain: "binary-limit-breaker.firebaseapp.com",
-        databaseURL: "https://binary-limit-breaker-default-rtdb.firebaseio.com",
-        projectId: "binary-limit-breaker",
-        storageBucket: "binary-limit-breaker.firebasestorage.app",
-        messagingSenderId: "278424467808",
-        appId: "1:278424467808:web:fceb3ddc3817f5d4230605"
-      };
+      // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCxDuuIwrtR8JGvgbEIMnjQm8zwZvhyL7s",
+  authDomain: "binary-limit-breaker.firebaseapp.com",
+  databaseURL: "https://binary-limit-breaker-default-rtdb.firebaseio.com",
+  projectId: "binary-limit-breaker",
+  storageBucket: "binary-limit-breaker.firebasestorage.app",
+  messagingSenderId: "278424467808",
+  appId: "1:278424467808:web:fceb3ddc3817f5d4230605"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
       try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); } 
       catch (e) { logMsg("❌ 初始化失敗: " + e.message); }

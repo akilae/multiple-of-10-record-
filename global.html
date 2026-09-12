@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>2x Binary Engine - 全網極速運算核心</title>
   
-  <!-- 先將 CSP 註解掉，確保所有功能正常連線 -->
-  <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com https://www.google.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src https://www.google.com https://www.recaptcha.net;"> -->
-
-  <!-- 載入 Firebase SDKs (v8) -->
+  <!-- 載入 Firebase SDKs (v8 相容版) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -82,7 +79,6 @@
       <input type="password" id="authPassword" placeholder="密碼 (至少 6 位數)" autocomplete="current-password">
       <button class="btn btn-primary" onclick="handleAuth('login')">節點登入</button>
       <button class="btn btn-secondary" onclick="handleAuth('register')">註冊新節點</button>
-      <!-- 新增：忘記密碼按鈕 -->
       <button class="btn btn-text" onclick="handleResetPassword()">忘記密碼？</button>
       
       <div id="authMsg" class="msg"></div>
@@ -90,7 +86,7 @@
   </div>
 
   <script>
-    // 你的 Firebase 金鑰
+    // 1. Firebase 基礎設定與金鑰
     const firebaseConfig = {
       apiKey: "AIzaSyCxDuuIwrtR8JGvgbEIMnjQm8zwZvhyL7s",
       authDomain: "binary-limit-breaker.firebaseapp.com",
@@ -101,19 +97,18 @@
       appId: "1:278424467808:web:fceb3ddc3817f5d4230605"
     };
 
-    // 以 v8 方式初始化 Firebase
     firebase.initializeApp(firebaseConfig);
 
-    // 啟用 App Check (reCAPTCHA Enterprise)
+    // 2. 啟用 App Check (正確的 Firebase v8 寫法)
     const appCheck = firebase.appCheck();
-    appCheck.activate(
-      new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lflc7ctAAAAAF5LsBE301y0oxqiXAhuk1Jx4XkG'),
-      true
-    );
+    appCheck.activate('6Lflc7ctAAAAAF5LsBE301y0oxqiXAhuk1Jx4XkG', true);
 
     const auth = firebase.auth();
     const db = firebase.database();
 
+    // =========================================================
+    // 若後續測試正常且需要混淆，請將以下所有程式碼複製到 obfuscator.io 處理
+    // =========================================================
     let currentUser = null;
     let localPendingBoosts = 0;
     let totalLocalContrib = 0;
@@ -186,23 +181,19 @@
       }
     }
 
-    // 新增：忘記密碼邏輯
     async function handleResetPassword() {
       const email = document.getElementById('authEmail').value.trim();
       authMsg.className = "msg";
-      
-      // 防呆：確認有輸入信箱
       if (!email) {
         authMsg.className = "msg error";
         authMsg.innerText = "⚠️ 請先在上方的欄位輸入您的 Email，再點擊忘記密碼。";
         return;
       }
-
       authMsg.innerText = "正在發送密碼重置信...";
       try {
         await auth.sendPasswordResetEmail(email);
         authMsg.className = "msg success";
-        authMsg.innerText = "✅ 密碼重置信已寄出！請至您的信箱查收並重設密碼。";
+        authMsg.innerText = "✅ 密碼重置信已寄出！請至信箱查收並重設密碼。";
       } catch (err) {
         authMsg.className = "msg error";
         authMsg.innerText = getErrorMessage(err.code);

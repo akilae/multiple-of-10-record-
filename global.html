@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>2x Binary Engine - 全網極速運算核心</title>
   
-  <!-- Content Security Policy (基本資安防護) -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com https://www.google.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src https://www.google.com https://www.recaptcha.net;">
+  <!-- 先將 CSP 註解掉，確保所有功能正常連線 -->
+  <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com https://www.google.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.recaptcha.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src https://www.google.com https://www.recaptcha.net;"> -->
 
-  <!-- Firebase SDKs (v8) -->
+  <!-- 載入 Firebase SDKs (v8) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -16,47 +16,31 @@
 
   <style>
     :root {
-      --bg: #0b0f19;
-      --card-bg: #151d30;
-      --accent: #00f2fe;
-      --accent-glow: rgba(0, 242, 254, 0.4);
-      --text: #f0f4f8;
-      --text-dim: #8a99ad;
-      --danger: #ff4d4f;
-      --success: #00e676;
+      --bg: #0b0f19; --card-bg: #151d30; --accent: #00f2fe; --accent-glow: rgba(0, 242, 254, 0.4);
+      --text: #f0f4f8; --text-dim: #8a99ad; --danger: #ff4d4f; --success: #00e676;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
     body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-
     .container { width: 100%; max-width: 520px; background: var(--card-bg); border-radius: 16px; padding: 28px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.08); text-align: center; }
     h1 { font-size: 1.8rem; margin-bottom: 8px; color: var(--accent); letter-spacing: 1px; }
     .subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 24px; }
-
     .status-bar { display: flex; justify-content: space-between; font-size: 0.85rem; background: rgba(0,0,0,0.3); padding: 8px 16px; border-radius: 8px; margin-bottom: 20px; color: var(--text-dim); }
     .status-online { color: var(--success); font-weight: bold; }
-
-    /* 數字顯示儀表板 */
     .counter-card { background: rgba(0, 242, 254, 0.05); border: 1px solid var(--accent-glow); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
     .counter-label { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; }
     .counter-val { font-size: 2.2rem; font-weight: 800; font-family: monospace; color: #fff; word-break: break-all; }
     .personal-val { font-size: 1rem; color: var(--accent); margin-top: 6px; }
-
-    /* 按鈕與互動 */
     .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; margin-bottom: 12px; }
     .btn-primary { background: linear-gradient(135deg, #00c6ff, #0072ff); color: white; box-shadow: 0 4px 15px var(--accent-glow); }
     .btn-primary:active { transform: scale(0.98); }
     .btn-secondary { background: rgba(255,255,255,0.08); color: var(--text); }
     .btn-secondary:hover { background: rgba(255,255,255,0.12); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* 表單區塊 */
     .auth-box input { width: 100%; padding: 12px 14px; margin-bottom: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: #fff; font-size: 0.95rem; }
     .auth-box input:focus { outline: none; border-color: var(--accent); }
     .msg { font-size: 0.85rem; margin-top: 10px; min-height: 20px; }
     .msg.error { color: var(--danger); }
     .msg.success { color: var(--success); }
-
     .hidden { display: none !important; }
   </style>
 </head>
@@ -71,26 +55,22 @@
       <span>全網在線節點: <span id="onlineCount">0</span></span>
     </div>
 
-    <!-- 儀表板區塊 -->
     <div class="counter-card">
       <div class="counter-label">全網累積算力指數 (2^N)</div>
       <div class="counter-val" id="globalSteps">0</div>
       <div class="personal-val">我的貢獻: <span id="localContrib">0</span> 次</div>
     </div>
 
-    <!-- 驗證未通過提示 -->
     <div id="verifyAlert" class="msg error hidden" style="margin-bottom: 15px;">
       ⚠️ 請先前往收件匣完成 Email 驗證才能啟動加速引擎！
       <button class="btn btn-secondary" style="margin-top: 8px; padding: 6px;" onclick="resendVerifyEmail()">重寄驗證信</button>
     </div>
 
-    <!-- 已登入操作區 -->
     <div id="engineControls" class="hidden">
       <button class="btn btn-primary" id="boostBtn" onclick="triggerBoost()">🚀 注入算力 (2x Boost)</button>
       <button class="btn btn-secondary" onclick="handleLogout()">登出節點</button>
     </div>
 
-    <!-- 登入 / 註冊表單 -->
     <div id="authBox" class="auth-box">
       <input type="email" id="authEmail" placeholder="電子郵件 (Email)" autocomplete="email">
       <input type="password" id="authPassword" placeholder="密碼 (至少 6 位數)" autocomplete="current-password">
@@ -101,27 +81,21 @@
   </div>
 
   <script>
-    // -------------------------------------------------------------
-    // 1. Firebase 基礎設定 (請替換為你的 Firebase Config 參數)
-    // -------------------------------------------------------------
-   
-const firebaseConfig = {
-  apiKey: "AIzaSyCxDuuIwrtR8JGvgbEIMnjQm8zwZvhyL7s",
-  authDomain: "binary-limit-breaker.firebaseapp.com",
-  databaseURL: "https://binary-limit-breaker-default-rtdb.firebaseio.com",
-  projectId: "binary-limit-breaker",
-  storageBucket: "binary-limit-breaker.firebasestorage.app",
-  messagingSenderId: "278424467808",
-  appId: "1:278424467808:web:fceb3ddc3817f5d4230605"
-};
+    // 你的 Firebase 金鑰
+    const firebaseConfig = {
+      apiKey: "AIzaSyCxDuuIwrtR8JGvgbEIMnjQm8zwZvhyL7s",
+      authDomain: "binary-limit-breaker.firebaseapp.com",
+      databaseURL: "https://binary-limit-breaker-default-rtdb.firebaseio.com",
+      projectId: "binary-limit-breaker",
+      storageBucket: "binary-limit-breaker.firebasestorage.app",
+      messagingSenderId: "278424467808",
+      appId: "1:278424467808:web:fceb3ddc3817f5d4230605"
+    };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig); 
+    // 以 v8 方式初始化 Firebase
     firebase.initializeApp(firebaseConfig);
 
-    // -------------------------------------------------------------
-    // 2. 啟用 reCAPTCHA Enterprise App Check
-    // -------------------------------------------------------------
+    // 啟用 App Check (reCAPTCHA Enterprise)
     const appCheck = firebase.appCheck();
     appCheck.activate(
       new firebase.appCheck.ReCaptchaEnterpriseProvider('6Lflc7ctAAAAAF5LsBE301y0oxqiXAhuk1Jx4XkG'),
@@ -131,10 +105,132 @@ const app = initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
-    // -------------------------------------------------------------
-    // 3. 混淆後的核心業務邏輯 (防止腳本竄改)
-    // -------------------------------------------------------------
-    const _0x36acb7=_0x509c;function _0x3ede(){const _0xfdd0b9=['localContrib','19945mliYIE','wMamd','style','cuPcO','createUserWithEmailAndPassword','驗證失敗，請檢查輸入資訊','連線驗證中...','netStatus','找不到此節點帳號','LwQzs','transaction','status-online','.info/connected','onlineCount','emailVerified','auth/weak-password','214626TbrZJH','3169370zZpmRT','EfZEQ','Vzich','IZJZO','KDNFM','add','code','signOut','1037673AdMnxp','EbBLP','getElementById','msg\x20success','innerText','className','engineControls','user','LYbym','uid','online_nodes/','signInWithEmailAndPassword','217XBlzNC','currentUser','4HFrDVe','var(--danger)','36gxmgkM','ServerValue','算力同步失敗:','已連線','onDisconnect','classList','sendEmailVerification','register','FYkoL','color','onAuthStateChanged','database','MSVXY','oztbN','13900408tkmFFX','GkLYK','toLocaleString','離線中','密碼長度需至少\x206\x20位','704854CBOKhO','204TAVNhp','auth/user-not-found','auth/email-already-in-use','verifyAlert','value','AcnNk','rfKlJ','msg','註冊成功！驗證信已寄出，請驗證後重新整理頁面。','MrTQB','22ymDeln','remove','set','CSChA','此信箱已註冊過','1433985GzGuzR','VMeRV','YRrYg','global_metrics/steps','hidden','9pCbfYE','ref','驗證信已重新發送，請至信箱查收！','PBILU','密碼錯誤','JdRMF','val','Email\x20格式不正確','XbmSF','koFgG'];_0x3ede=function(){return _0xfdd0b9;};return _0x3ede();}(function(_0x4425b9,_0x3d8fb4){const _0x4a36f5=_0x509c,_0x490b68=_0x4425b9();while(!![]){try{const _0x3986fd=-parseInt(_0x4a36f5(0x1a3))/0x1*(-parseInt(_0x4a36f5(0x1ea))/0x2)+parseInt(_0x4a36f5(0x1b3))/0x3+parseInt(_0x4a36f5(0x1ec))/0x4*(-parseInt(_0x4a36f5(0x1c3))/0x5)+parseInt(_0x4a36f5(0x1d3))/0x6*(-parseInt(_0x4a36f5(0x1e8))/0x7)+parseInt(_0x4a36f5(0x19e))/0x8*(-parseInt(_0x4a36f5(0x1b8))/0x9)+-parseInt(_0x4a36f5(0x1d4))/0xa*(-parseInt(_0x4a36f5(0x1ae))/0xb)+parseInt(_0x4a36f5(0x1a4))/0xc*(parseInt(_0x4a36f5(0x1dc))/0xd);if(_0x3986fd===_0x3d8fb4)break;else _0x490b68['push'](_0x490b68['shift']());}catch(_0x4eb476){_0x490b68['push'](_0x490b68['shift']());}}}(_0x3ede,0xf3355));let currentUser=null,localPendingBoosts=0x0,totalLocalContrib=0x0;function _0x509c(_0xf23387,_0x36e5b0){_0xf23387=_0xf23387-0x194;const _0x3eded2=_0x3ede();let _0x509c82=_0x3eded2[_0xf23387];return _0x509c82;}const globalStepsEl=document['getElementById']('globalSteps'),onlineCountEl=document[_0x36acb7(0x1de)](_0x36acb7(0x1d0)),localContribEl=document[_0x36acb7(0x1de)](_0x36acb7(0x1c2)),netStatusEl=document[_0x36acb7(0x1de)](_0x36acb7(0x1ca)),authBox=document['getElementById']('authBox'),engineControls=document['getElementById'](_0x36acb7(0x1e2)),verifyAlert=document[_0x36acb7(0x1de)](_0x36acb7(0x1a7)),authMsg=document[_0x36acb7(0x1de)]('authMsg');db[_0x36acb7(0x1b9)](_0x36acb7(0x1cf))['on'](_0x36acb7(0x1a8),_0x29d956=>{const _0x31dcf5=_0x36acb7,_0x574df8={'AcnNk':function(_0x4f2993,_0x35fb52){return _0x4f2993===_0x35fb52;},'SqtAX':_0x31dcf5(0x1ef),'LwQzs':function(_0x147c51,_0x219ae3){return _0x147c51(_0x219ae3);},'kSlfz':_0x31dcf5(0x1eb)};if(_0x574df8[_0x31dcf5(0x1a9)](_0x29d956[_0x31dcf5(0x1be)](),!![])){netStatusEl['innerText']=_0x574df8['SqtAX'],netStatusEl[_0x31dcf5(0x1e1)]=_0x31dcf5(0x1ce);if(currentUser)_0x574df8[_0x31dcf5(0x1cc)](setupPresence,currentUser[_0x31dcf5(0x1e5)]);}else netStatusEl[_0x31dcf5(0x1e0)]=_0x31dcf5(0x1a1),netStatusEl[_0x31dcf5(0x1c5)][_0x31dcf5(0x199)]=_0x574df8['kSlfz'];}),db[_0x36acb7(0x1b9)](_0x36acb7(0x1b6))['on']('value',_0x146db8=>{const _0x2fc5a3=_0x36acb7,_0x531522={'GkLYK':function(_0x2bdd1c,_0x5c2d6e){return _0x2bdd1c(_0x5c2d6e);}},_0x357397=_0x146db8['val']()||0x0;globalStepsEl[_0x2fc5a3(0x1e0)]=_0x531522[_0x2fc5a3(0x19f)](Number,_0x357397)[_0x2fc5a3(0x1a0)]();}),db[_0x36acb7(0x1b9)]('online_nodes')['on'](_0x36acb7(0x1a8),_0x332a89=>{onlineCountEl['innerText']=_0x332a89['numChildren']()||0x1;}),auth[_0x36acb7(0x19a)](_0x5e9e2c=>{const _0x503f70=_0x36acb7,_0x5bbc81={'LYbym':_0x503f70(0x1b7),'XsEQb':function(_0x40cd16,_0x3a64f8){return _0x40cd16(_0x3a64f8);}};currentUser=_0x5e9e2c,authMsg[_0x503f70(0x1e0)]='',_0x5e9e2c?(authBox[_0x503f70(0x195)][_0x503f70(0x1d9)](_0x5bbc81[_0x503f70(0x1e4)]),_0x5e9e2c['emailVerified']?(verifyAlert[_0x503f70(0x195)][_0x503f70(0x1d9)](_0x5bbc81[_0x503f70(0x1e4)]),engineControls[_0x503f70(0x195)][_0x503f70(0x1af)](_0x5bbc81['LYbym']),_0x5bbc81['XsEQb'](setupPresence,_0x5e9e2c['uid'])):(verifyAlert[_0x503f70(0x195)]['remove'](_0x503f70(0x1b7)),engineControls[_0x503f70(0x195)]['add'](_0x5bbc81[_0x503f70(0x1e4)]))):(authBox[_0x503f70(0x195)][_0x503f70(0x1af)](_0x5bbc81[_0x503f70(0x1e4)]),engineControls['classList']['add'](_0x503f70(0x1b7)),verifyAlert[_0x503f70(0x195)]['add'](_0x503f70(0x1b7)));});async function handleAuth(_0x41b753){const _0x393325=_0x36acb7,_0xb1b072={'YRrYg':'authEmail','EfZEQ':_0x393325(0x1ab),'hPOMk':_0x393325(0x1c9),'FYkoL':function(_0x1b1cf7,_0xe866f1){return _0x1b1cf7===_0xe866f1;},'JdRMF':_0x393325(0x197),'oztbN':_0x393325(0x1df),'IZJZO':_0x393325(0x1ac),'EbBLP':'msg\x20error'},_0x54a59d=document['getElementById'](_0xb1b072[_0x393325(0x1b5)])[_0x393325(0x1a8)]['trim'](),_0x2e0e3b=document['getElementById']('authPassword')[_0x393325(0x1a8)];authMsg['className']=_0xb1b072[_0x393325(0x1d5)],authMsg[_0x393325(0x1e0)]=_0xb1b072['hPOMk'];try{if(_0xb1b072[_0x393325(0x198)](_0x41b753,_0xb1b072[_0x393325(0x1bd)])){const _0x3eba52=await auth[_0x393325(0x1c7)](_0x54a59d,_0x2e0e3b);await _0x3eba52[_0x393325(0x1e3)][_0x393325(0x196)](),authMsg['className']=_0xb1b072[_0x393325(0x19d)],authMsg[_0x393325(0x1e0)]=_0xb1b072[_0x393325(0x1d7)];}else await auth[_0x393325(0x1e7)](_0x54a59d,_0x2e0e3b);}catch(_0x5e2c87){authMsg[_0x393325(0x1e1)]=_0xb1b072[_0x393325(0x1dd)],authMsg['innerText']=getErrorMessage(_0x5e2c87[_0x393325(0x1da)]);}}async function resendVerifyEmail(){const _0x467f98=_0x36acb7,_0x51926f={'MSVXY':function(_0x38adc7,_0x467ce1){return _0x38adc7(_0x467ce1);},'wMamd':_0x467f98(0x1ba)};auth[_0x467f98(0x1e9)]&&(await auth['currentUser'][_0x467f98(0x196)](),_0x51926f[_0x467f98(0x19c)](alert,_0x51926f[_0x467f98(0x1c4)]));}function handleLogout(){const _0x243663=_0x36acb7;currentUser&&db['ref'](_0x243663(0x1e6)+currentUser[_0x243663(0x1e5)])['remove'](),auth[_0x243663(0x1db)]();}function setupPresence(_0x36ce00){const _0x5872cf=_0x36acb7,_0x5db8cf=db[_0x5872cf(0x1b9)](_0x5872cf(0x1e6)+_0x36ce00);_0x5db8cf[_0x5872cf(0x194)]()[_0x5872cf(0x1af)](),_0x5db8cf[_0x5872cf(0x1b0)]({'onlineAt':firebase[_0x5872cf(0x19b)][_0x5872cf(0x1ed)]['TIMESTAMP']});}function triggerBoost(){const _0x1a3bf5=_0x36acb7,_0x584e28={'CSChA':function(_0x4a7acf,_0x49e8b2){return _0x4a7acf+_0x49e8b2;}};if(!currentUser||!currentUser[_0x1a3bf5(0x1d1)])return;localPendingBoosts+=0x1,totalLocalContrib+=0x1,localContribEl[_0x1a3bf5(0x1e0)]=totalLocalContrib;const _0x56bbec=parseInt(globalStepsEl['innerText']['replace'](/,/g,''))||0x0;globalStepsEl[_0x1a3bf5(0x1e0)]=_0x584e28[_0x1a3bf5(0x1b1)](_0x56bbec,0x1)['toLocaleString']();}setInterval(()=>{const _0x577936=_0x36acb7,_0xd7d8a9={'PBILU':function(_0x234d13,_0x51a1b8){return _0x234d13+_0x51a1b8;},'XbmSF':function(_0x559a0d,_0x5a9795){return _0x559a0d>_0x5a9795;}};if(_0xd7d8a9[_0x577936(0x1c0)](localPendingBoosts,0x0)&&currentUser){const _0x482f8c=localPendingBoosts;localPendingBoosts=0x0,db[_0x577936(0x1b9)](_0x577936(0x1b6))[_0x577936(0x1cd)](_0x4577a2=>{const _0x58f353=_0x577936;return _0xd7d8a9[_0x58f353(0x1bb)](_0x4577a2||0x0,_0x482f8c);},(_0x37df37,_0x4ef959)=>{const _0x1f474f=_0x577936;_0x37df37&&(console['error'](_0x1f474f(0x1ee),_0x37df37),localPendingBoosts+=_0x482f8c);});}},0x5dc);function getErrorMessage(_0x4671db){const _0x3544fb=_0x36acb7,_0x1e5ce8={'Vzich':_0x3544fb(0x1bf),'cuPcO':_0x3544fb(0x1a5),'VMeRV':_0x3544fb(0x1cb),'koFgG':'auth/wrong-password','gFLxd':_0x3544fb(0x1bc),'MrTQB':_0x3544fb(0x1a6),'KDNFM':_0x3544fb(0x1b2),'IuDbg':_0x3544fb(0x1d2),'rfKlJ':_0x3544fb(0x1a2),'todMn':_0x3544fb(0x1c8)};switch(_0x4671db){case'auth/invalid-email':return _0x1e5ce8[_0x3544fb(0x1d6)];case _0x1e5ce8[_0x3544fb(0x1c6)]:return _0x1e5ce8[_0x3544fb(0x1b4)];case _0x1e5ce8[_0x3544fb(0x1c1)]:return _0x1e5ce8['gFLxd'];case _0x1e5ce8[_0x3544fb(0x1ad)]:return _0x1e5ce8[_0x3544fb(0x1d8)];case _0x1e5ce8['IuDbg']:return _0x1e5ce8[_0x3544fb(0x1aa)];default:return _0x1e5ce8['todMn'];}}
+    let currentUser = null;
+    let localPendingBoosts = 0;
+    let totalLocalContrib = 0;
+    const globalStepsEl = document.getElementById('globalSteps');
+    const onlineCountEl = document.getElementById('onlineCount');
+    const localContribEl = document.getElementById('localContrib');
+    const netStatusEl = document.getElementById('netStatus');
+    const authBox = document.getElementById('authBox');
+    const engineControls = document.getElementById('engineControls');
+    const verifyAlert = document.getElementById('verifyAlert');
+    const authMsg = document.getElementById('authMsg');
+
+    db.ref('.info/connected').on('value', (snap) => {
+      if (snap.val() === true) {
+        netStatusEl.innerText = "已連線";
+        netStatusEl.className = "status-online";
+        if (currentUser) setupPresence(currentUser.uid);
+      } else {
+        netStatusEl.innerText = "離線中";
+        netStatusEl.style.color = "var(--danger)";
+      }
+    });
+
+    db.ref('global_metrics/steps').on('value', (snap) => {
+      const val = snap.val() || 0;
+      globalStepsEl.innerText = Number(val).toLocaleString();
+    });
+
+    db.ref('online_nodes').on('value', (snap) => {
+      onlineCountEl.innerText = snap.numChildren() || 1;
+    });
+
+    auth.onAuthStateChanged((user) => {
+      currentUser = user;
+      authMsg.innerText = "";
+      if (user) {
+        authBox.classList.add('hidden');
+        if (user.emailVerified) {
+          verifyAlert.classList.add('hidden');
+          engineControls.classList.remove('hidden');
+          setupPresence(user.uid);
+        } else {
+          verifyAlert.classList.remove('hidden');
+          engineControls.classList.add('hidden');
+        }
+      } else {
+        authBox.classList.remove('hidden');
+        engineControls.classList.add('hidden');
+        verifyAlert.classList.add('hidden');
+      }
+    });
+
+    async function handleAuth(type) {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      authMsg.className = "msg";
+      authMsg.innerText = "連線驗證中...";
+      try {
+        if (type === 'register') {
+          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          await cred.user.sendEmailVerification();
+          authMsg.className = "msg success";
+          authMsg.innerText = "註冊成功！驗證信已寄出，請驗證後重新整理頁面。";
+        } else {
+          await auth.signInWithEmailAndPassword(email, password);
+        }
+      } catch (err) {
+        authMsg.className = "msg error";
+        authMsg.innerText = getErrorMessage(err.code);
+      }
+    }
+
+    async function resendVerifyEmail() {
+      if (auth.currentUser) {
+        await auth.currentUser.sendEmailVerification();
+        alert("驗證信已重新發送，請至信箱查收！");
+      }
+    }
+
+    function handleLogout() {
+      if (currentUser) {
+        db.ref(`online_nodes/${currentUser.uid}`).remove();
+      }
+      auth.signOut();
+    }
+
+    function setupPresence(uid) {
+      const myNodeRef = db.ref(`online_nodes/${uid}`);
+      myNodeRef.onDisconnect().remove();
+      myNodeRef.set({ onlineAt: firebase.database.ServerValue.TIMESTAMP });
+    }
+
+    function triggerBoost() {
+      if (!currentUser || !currentUser.emailVerified) return;
+      localPendingBoosts += 1;
+      totalLocalContrib += 1;
+      localContribEl.innerText = totalLocalContrib;
+      const currentVal = parseInt(globalStepsEl.innerText.replace(/,/g, '')) || 0;
+      globalStepsEl.innerText = (currentVal + 1).toLocaleString();
+    }
+
+    setInterval(() => {
+      if (localPendingBoosts > 0 && currentUser) {
+        const toAdd = localPendingBoosts;
+        localPendingBoosts = 0;
+        db.ref('global_metrics/steps').transaction((current) => {
+          return (current || 0) + toAdd;
+        }, (error) => {
+          if (error) {
+            console.error("算力同步失敗:", error);
+            localPendingBoosts += toAdd;
+          }
+        });
+      }
+    }, 1500);
+
+    function getErrorMessage(code) {
+      switch (code) {
+        case 'auth/invalid-email': return 'Email 格式不正確';
+        case 'auth/user-not-found': return '找不到此節點帳號';
+        case 'auth/wrong-password': return '密碼錯誤';
+        case 'auth/email-already-in-use': return '此信箱已註冊過';
+        case 'auth/weak-password': return '密碼長度需至少 6 位';
+        default: return '驗證失敗，請檢查輸入資訊';
+      }
+    }
   </script>
 </body>
 </html>

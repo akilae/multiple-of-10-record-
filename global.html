@@ -36,6 +36,11 @@
     .btn-secondary { background: rgba(255,255,255,0.08); color: var(--text); }
     .btn-secondary:hover { background: rgba(255,255,255,0.12); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    /* 忘記密碼按鈕專用樣式 */
+    .btn-text { background: transparent; color: var(--text-dim); border: 1px solid transparent; font-size: 0.9rem; margin-bottom: 0; padding: 10px; }
+    .btn-text:hover { color: #fff; text-decoration: underline; }
+
     .auth-box input { width: 100%; padding: 12px 14px; margin-bottom: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.2); color: #fff; font-size: 0.95rem; }
     .auth-box input:focus { outline: none; border-color: var(--accent); }
     .msg { font-size: 0.85rem; margin-top: 10px; min-height: 20px; }
@@ -64,6 +69,7 @@
     <div id="verifyAlert" class="msg error hidden" style="margin-bottom: 15px;">
       ⚠️ 請先前往收件匣完成 Email 驗證才能啟動加速引擎！
       <button class="btn btn-secondary" style="margin-top: 8px; padding: 6px;" onclick="resendVerifyEmail()">重寄驗證信</button>
+      <button class="btn btn-text" onclick="handleLogout()">登出並換帳號</button>
     </div>
 
     <div id="engineControls" class="hidden">
@@ -76,6 +82,9 @@
       <input type="password" id="authPassword" placeholder="密碼 (至少 6 位數)" autocomplete="current-password">
       <button class="btn btn-primary" onclick="handleAuth('login')">節點登入</button>
       <button class="btn btn-secondary" onclick="handleAuth('register')">註冊新節點</button>
+      <!-- 新增：忘記密碼按鈕 -->
+      <button class="btn btn-text" onclick="handleResetPassword()">忘記密碼？</button>
+      
       <div id="authMsg" class="msg"></div>
     </div>
   </div>
@@ -177,6 +186,29 @@
       }
     }
 
+    // 新增：忘記密碼邏輯
+    async function handleResetPassword() {
+      const email = document.getElementById('authEmail').value.trim();
+      authMsg.className = "msg";
+      
+      // 防呆：確認有輸入信箱
+      if (!email) {
+        authMsg.className = "msg error";
+        authMsg.innerText = "⚠️ 請先在上方的欄位輸入您的 Email，再點擊忘記密碼。";
+        return;
+      }
+
+      authMsg.innerText = "正在發送密碼重置信...";
+      try {
+        await auth.sendPasswordResetEmail(email);
+        authMsg.className = "msg success";
+        authMsg.innerText = "✅ 密碼重置信已寄出！請至您的信箱查收並重設密碼。";
+      } catch (err) {
+        authMsg.className = "msg error";
+        authMsg.innerText = getErrorMessage(err.code);
+      }
+    }
+
     async function resendVerifyEmail() {
       if (auth.currentUser) {
         await auth.currentUser.sendEmailVerification();
@@ -224,10 +256,11 @@
     function getErrorMessage(code) {
       switch (code) {
         case 'auth/invalid-email': return 'Email 格式不正確';
-        case 'auth/user-not-found': return '找不到此節點帳號';
+        case 'auth/user-not-found': return '找不到此帳號，請確認信箱是否正確';
         case 'auth/wrong-password': return '密碼錯誤';
         case 'auth/email-already-in-use': return '此信箱已註冊過';
         case 'auth/weak-password': return '密碼長度需至少 6 位';
+        case 'auth/missing-email': return '請輸入 Email';
         default: return '驗證失敗，請檢查輸入資訊';
       }
     }
